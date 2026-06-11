@@ -1,10 +1,11 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { useSQLiteContext } from "expo-sqlite";
-import { dbInsertAnalise, dbIncrementarUsoDiario } from "../database/databaseInit";
+import { useDatabase } from "../database/sqlite";
+
 import {
   Image,
   ImageBackground,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -12,357 +13,727 @@ import {
   View,
 } from "react-native";
 
+import {
+  dbInsertAnalise,
+  dbIncrementarUsoDiario,
+} from "../database/databaseInit";
+
+
+// ==============================
+// TELA PRINCIPAL
+// ==============================
+
 export default function AnalisarLink() {
-  const db = useSQLiteContext();
+
+const db = Platform.OS !== "web"
+    ? useDatabase()
+    : null;
+
+
   const [link, setLink] = useState("");
 
-const analisarNoticia = async () => {
-  if (!link.trim()) return;
 
-  console.log(link);
-  const scoreAleatorio = Math.floor(Math.random() * 100);
-  
-  // Define o resultado textual com base no score obtido
-  let resultadoText = "Baixa confiabilidade";
-  if (scoreAleatorio >= 80) resultadoText = "Alta confiabilidade";
-  else if (scoreAleatorio >= 50) resultadoText = "Confiabilidade moderada";
 
-  try {
-    const analiseId = "anl_" + Date.now();
-    const mockUserId = "user_logado_id"; // Em produção, você pegará o ID do usuário logado
+  async function analisarNoticia() {
 
-    // Insere a análise no banco de dados local
-    await dbInsertAnalise(
-      db,
-      analiseId,
-      mockUserId,
-      link,
-      "Conteúdo extraído do link analisado.", 
-      scoreAleatorio,
-      resultadoText,
-      "Geral"
-    );
 
-    // Incrementa ou cria o registro de uso do dia atual
-    await dbIncrementarUsoDiario(db, mockUserId);
+    if (!link.trim()) return;
 
-    router.push({
-      pathname: "/resultado",
-      params: {
-        score: scoreAleatorio,
-      },
-    });
-  } catch (error) {
-    console.error("Erro ao processar e salvar análise no SQLite:", error);
+
+
+    try {
+
+
+      const score = gerarScore();
+
+      const resultado = definirResultado(score);
+
+
+      const userId = "user_logado_id";
+
+      const analiseId = `anl_${Date.now()}`;
+
+
+
+      if (db) {
+
+
+        await dbInsertAnalise(
+
+          db,
+
+          analiseId,
+
+          userId,
+
+          link,
+
+          "Conteúdo extraído do link analisado.",
+
+          score,
+
+          resultado,
+
+          "Geral"
+
+        );
+
+
+
+        await dbIncrementarUsoDiario(
+
+          db,
+
+          userId
+
+        );
+
+
+      }
+
+
+
+      router.push({
+
+        pathname: "/resultado",
+
+        params: {
+
+          score: String(score),
+
+        },
+
+      });
+
+
+
+    } catch(error) {
+
+
+      console.error(
+        "Erro ao salvar análise:",
+        error
+      );
+
+
+    }
+
+
   }
-};
+
+
+
+
+
+  if (Platform.OS === "web") {
+
+    return <WebMessage />;
+
+  }
+
+
+
+
+
   return (
+
     <ImageBackground
+
       source={require("../assets/Background.png")}
+
       style={styles.background}
+
     >
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButtonContainer}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.plusButton}
-          onPress={() => router.push("/planos" as any)}
-        >
-          <Image
-            source={require("../assets/Plus.png")}
-            style={styles.plusIcon}
-          />
-          <Text style={styles.plusText}>Plus</Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* CONTEÚDO */}
+
+      <Header />
+
+
+
       <View style={styles.content}>
+
+
         <View style={styles.card}>
-          <Text style={styles.title}>Insira o link</Text>
+
+
+          <Text style={styles.title}>
+
+            Insira o link
+
+          </Text>
+
+
 
           <Text style={styles.subtitle}>
+
             Cole o link da notícia que deseja verificar.
+
           </Text>
+
+
+
 
           <TextInput
+
             style={styles.input}
+
             placeholder="https://exemplo.com/noticia"
+
             placeholderTextColor="#666"
+
             value={link}
+
             onChangeText={setLink}
+
             autoCapitalize="none"
+
           />
 
-          <TouchableOpacity style={styles.button} onPress={analisarNoticia}>
-            <Text style={styles.buttonText}>Analisar a notícia</Text>
+
+
+
+          <TouchableOpacity
+
+            style={styles.button}
+
+            onPress={analisarNoticia}
+
+          >
+
+
+
+            <Text style={styles.buttonText}>
+
+              Analisar a notícia
+
+            </Text>
+
+
+
 
             <Image
+
               source={require("../assets/send.png")}
-              style={styles.sendIcon}
+
+              style={styles.icon}
+
             />
+
+
+
           </TouchableOpacity>
+
+
+
+
         </View>
 
-        {/* CARD INFERIOR */}
-        <View style={styles.securityCard}>
-          <Image
-            source={require("../assets/lock.png")}
-            style={styles.securityIcon}
-          />
 
-          <Text style={styles.securityText}>
-            Seus dados são totalmente protegidos.
-          </Text>
-        </View>
+
+
+        <SecurityCard />
+
+
+
       </View>
+
+
+
+
     </ImageBackground>
+
   );
+
 }
 
+
+
+
+
+// ==============================
+// COMPONENTES
+// ==============================
+
+
+function Header(){
+
+
+  return (
+
+    <View style={styles.header}>
+
+
+      <TouchableOpacity
+
+        style={styles.backButton}
+
+        onPress={() => router.back()}
+
+      >
+
+        <Text style={styles.backText}>
+
+          ←
+
+        </Text>
+
+
+      </TouchableOpacity>
+
+
+
+
+
+      <TouchableOpacity
+
+        style={styles.plusButton}
+
+        onPress={() => router.push("/planos" as any)}
+
+      >
+
+
+
+        <Image
+
+          source={require("../assets/Plus.png")}
+
+          style={styles.icon}
+
+        />
+
+
+
+        <Text style={styles.plusText}>
+
+          Plus
+
+        </Text>
+
+
+
+      </TouchableOpacity>
+
+
+
+    </View>
+
+  );
+
+
+}
+
+
+
+
+
+function SecurityCard(){
+
+
+  return (
+
+    <View style={styles.securityCard}>
+
+
+      <Image
+
+        source={require("../assets/lock.png")}
+
+        style={styles.securityIcon}
+
+      />
+
+
+
+      <Text style={styles.securityText}>
+
+        Seus dados são totalmente protegidos.
+
+      </Text>
+
+
+
+    </View>
+
+  );
+
+
+}
+
+
+
+
+
+function WebMessage(){
+
+
+  return (
+
+    <View style={styles.webMessage}>
+
+
+      <Text>
+
+        SQLite disponível somente no aplicativo.
+
+      </Text>
+
+
+    </View>
+
+
+  );
+
+
+}
+
+
+
+
+
+// ==============================
+// FUNÇÕES AUXILIARES
+// ==============================
+
+
+function gerarScore(){
+
+  return Math.floor(Math.random() * 100);
+
+}
+
+
+
+function definirResultado(score:number){
+
+
+  if(score >= 80)
+
+    return "Alta confiabilidade";
+
+
+
+  if(score >= 50)
+
+    return "Confiabilidade moderada";
+
+
+
+  return "Baixa confiabilidade";
+
+
+}
+
+
+
+
+
+// ==============================
+// ESTILOS
+// ==============================
+
+
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 55,
+
+
+  background:{
+
+    flex:1,
+
+    paddingHorizontal:24,
+
+    paddingTop:55,
+
   },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  backButtonContainer: {
-    width: 55,
-    height: 55,
 
-    borderRadius: 999,
 
-    backgroundColor: "#FFFFFF",
+  header:{
 
-    justifyContent: "center",
-    alignItems: "center",
 
-    borderWidth: 2,
-    borderColor: "#702516",
+    flexDirection:"row",
 
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 3,
-      height: 5,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    justifyContent:"space-between",
 
-    elevation: 5,
+    alignItems:"center",
+
+
   },
 
-  backButton: {
-    fontSize: 28,
-    color: "#702516",
-    fontWeight: "bold",
+
+
+  backButton:{
+
+
+    width:55,
+
+    height:55,
+
+    borderRadius:999,
+
+    backgroundColor:"#FFF",
+
+    justifyContent:"center",
+
+    alignItems:"center",
+
+    borderWidth:2,
+
+    borderColor:"#702516",
+
+
   },
 
-  backIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#702516",
+
+
+  backText:{
+
+
+    fontSize:28,
+
+    color:"#702516",
+
+    fontWeight:"bold",
+
+
   },
 
-  plusButton: {
-    flexDirection: "row",
-    alignItems: "center",
 
-    borderWidth: 1.8,
-    borderColor: "#702516",
 
-    borderRadius: 28,
+  plusButton:{
 
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+
+    flexDirection:"row",
+
+    alignItems:"center",
+
+    borderWidth:2,
+
+    borderColor:"#702516",
+
+    borderRadius:30,
+
+    paddingHorizontal:20,
+
+    paddingVertical:10,
+
+
   },
 
-  plusIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 6,
-    tintColor: "#702516",
+
+
+  plusText:{
+
+
+    color:"#702516",
+
+    fontWeight:"700",
+
+    marginLeft:6,
+
+
   },
 
-  plusText: {
-    color: "#702516",
-    fontWeight: "700",
-    fontSize: 16,
+
+
+  content:{
+
+
+    flex:1,
+
+    justifyContent:"center",
+
+
   },
 
-  content: {
-    flex: 1,
-    justifyContent: "center",
+
+
+  card:{
+
+
+    backgroundColor:"#FFF",
+
+    borderRadius:28,
+
+    padding:30,
+
+    alignItems:"center",
+
+    borderWidth:2,
+
+    borderColor:"#702516",
+
+
   },
 
-  card: {
-    width: "100%",
-    maxWidth: 500,
 
-    backgroundColor: "#FFFFFF",
 
-    borderRadius: 28,
+  title:{
 
-    paddingVertical: 36,
-    paddingHorizontal: 28,
 
-    alignItems: "center",
+    fontSize:36,
 
-    borderWidth: 2,
-    borderColor: "#702516",
+    fontWeight:"bold",
 
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 4,
-      height: 8,
-    },
-    shadowOpacity: 0.28,
-    shadowRadius: 8,
+    color:"#702516",
 
-    elevation: 12,
+    marginBottom:15,
+
+
   },
 
-  title: {
-    fontSize: 36,
-    textAlign: "center",
 
-    color: "#702516",
 
-    fontWeight: "bold",
-    letterSpacing: 2,
+  subtitle:{
 
-    marginBottom: 16,
+
+    fontSize:16,
+
+    textAlign:"center",
+
+    color:"#444",
+
+    marginBottom:30,
+
+
   },
 
-  subtitle: {
-    textAlign: "center",
 
-    fontSize: 16,
-    color: "#4A4A4A",
 
-    lineHeight: 24,
+  input:{
 
-    marginBottom: 32,
 
-    maxWidth: 280,
+    width:"100%",
+
+    height:72,
+
+    backgroundColor:"#F4F4F4",
+
+    borderRadius:20,
+
+    borderWidth:2,
+
+    borderColor:"#8A4A3B",
+
+    paddingHorizontal:18,
+
+
   },
 
-  input: {
-    width: "100%",
 
-    backgroundColor: "#F4F4F4",
 
-    borderWidth: 1.8,
-    borderColor: "#8A4A3B",
+  button:{
 
-    borderRadius: 20,
 
-    height: 72,
+    marginTop:25,
 
-    paddingHorizontal: 18,
+    height:58,
 
-    fontSize: 16,
+    width:"100%",
 
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 2,
-      height: 4,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
+    backgroundColor:"#6B2416",
 
-    elevation: 4,
+    borderRadius:18,
+
+    flexDirection:"row",
+
+    justifyContent:"center",
+
+    alignItems:"center",
+
+
   },
 
-  button: {
-    width: "100%",
 
-    marginTop: 28,
 
-    backgroundColor: "#6B2416",
+  buttonText:{
 
-    height: 58,
 
-    borderRadius: 18,
+    color:"#FFF",
 
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    fontSize:18,
 
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 3,
-      height: 5,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
+    fontWeight:"600",
 
-    elevation: 8,
+    marginRight:10,
+
+
   },
 
-  buttonText: {
-    color: "#FFFFFF",
 
-    fontSize: 19,
-    fontWeight: "600",
 
-    marginRight: 10,
+  icon:{
+
+
+    width:22,
+
+    height:22,
+
+
   },
 
-  sendIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#FFFFFF",
+
+
+  securityCard:{
+
+
+    marginTop:22,
+
+    backgroundColor:"#FFF",
+
+    borderRadius:20,
+
+    borderWidth:2,
+
+    borderColor:"#8A4A3B",
+
+    padding:18,
+
+    flexDirection:"row",
+
+    alignItems:"center",
+
+
   },
 
-  securityCard: {
-    marginTop: 22,
-    marginBottom: 25,
 
-    borderWidth: 1.8,
-    borderColor: "#8A4A3B",
 
-    borderRadius: 22,
+  securityIcon:{
 
-    paddingVertical: 18,
-    paddingHorizontal: 20,
 
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    width:24,
 
-    backgroundColor: "#FFFFFF",
+    height:24,
 
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 3,
-      height: 5,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
+    marginRight:12,
 
-    elevation: 5,
+
   },
 
-  securityIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 12,
+
+
+  securityText:{
+
+
+    color:"#4A4A4A",
+
+
   },
 
-  securityText: {
-    color: "#4A4A4A",
-    fontSize: 15,
+
+
+  webMessage:{
+
+
+    flex:1,
+
+    justifyContent:"center",
+
+    alignItems:"center",
+
+
   },
+
+
 });

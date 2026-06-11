@@ -1,10 +1,10 @@
-import * as FileSystem from 'expo-file-system';
-import { Asset } from 'expo-asset';
-import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
+import { type SQLiteDatabase } from "expo-sqlite";
+
 
 // ==========================================
-// INTERFACES / TIPAGENS PARA O SEU APP
+// TIPAGENS
 // ==========================================
+
 export interface User {
   id: string;
   nome: string;
@@ -14,6 +14,7 @@ export interface User {
   created_at: string;
 }
 
+
 export interface Analise {
   id: string;
   user_id: string;
@@ -22,158 +23,594 @@ export interface Analise {
   score: number;
   resultado: string;
   categoria: string;
-  fontes: string; // Salvo como string JSON
+  fontes: string;
   created_at: string;
 }
 
+
+
 // ==========================================
-// INICIALIZAÇÃO DO BANCO (SUA LÓGICA ATUAL)
+// CRIAÇÃO DO BANCO
 // ==========================================
-export async function initializeDatabase(): Promise<SQLiteDatabase> {
-  const dbName = "database.db";
-  const baseDir = (FileSystem as any).documentDirectory;
-  
-  if (!baseDir) {
-    throw new Error("Não foi possível localizar o diretório de documentos do dispositivo.");
-  }
 
-  const dbFolder = `${baseDir}SQLite`;
-  const dbPath = `${dbFolder}/${dbName}`;
-
-  const folderInfo = await FileSystem.getInfoAsync(dbFolder);
-  if (!folderInfo.exists) {
-    await FileSystem.makeDirectoryAsync(dbFolder, { intermediates: true });
-  }
-
-  const fileInfo = await FileSystem.getInfoAsync(dbPath);
-  
-  if (!fileInfo.exists) {
-    console.log("Configurando o banco de dados local pela primeira vez...");
-    const asset = Asset.fromModule(require('./database.db'));
-    await asset.downloadAsync();
-
-    if (asset.localUri) {
-      await FileSystem.copyAsync({
-        from: asset.localUri,
-        to: dbPath,
-      });
-      console.log("Banco de dados copiado e pronto para uso!");
-    } else {
-      throw new Error("Falha ao carregar o arquivo local database.db");
-    }
-  }
-
-  return await openDatabaseAsync(dbName);
-}
-
-// ============================================================================
-// IMPLEMENTAÇÃO DAS SUBTAREFAS DO TRELLO (FUNÇÕES DE MANIPULAÇÃO DO BANCO)
-// ============================================================================
-
-/**
- * TAREFA: CRIAR INSERÇÕES
- * Salva um novo usuário no banco de dados após o cadastro/login.
- */
-export async function dbInsertUser(db: SQLiteDatabase, id: string, nome: string, email: string, foto?: string): Promise<void> {
-  const query = `
-    INSERT INTO users (id, nome, email, foto) 
-    VALUES ($id, $nome, $email, $foto);
-  `;
-  await db.runAsync(query, { $id: id, $nome: nome, $email: email, $foto: foto || null });
-}
-
-/**
- * TAREFA: CRIAR INSERÇÕES
- * Salva o resultado de uma análise de link/texto gerada pelo app.
- */
-export async function dbInsertAnalise(
-  db: SQLiteDatabase, 
-  id: string, 
-  userId: string, 
-  link: string | null, 
-  textoExtraido: string | null, 
-  score: number, 
-  resultado: string, 
-  categoria: string,
-  fontes: string = '[]'
+export async function initializeDatabase(
+  db: SQLiteDatabase
 ): Promise<void> {
-  const query = `
-    INSERT INTO analises (id, user_id, link, texto_extraido, score, resultado, categoria, fontes)
-    VALUES ($id, $userId, $link, $textoExtraido, $score, $resultado, $categoria, $fontes);
-  `;
-  await db.runAsync(query, {
-    $id: id,
-    $userId: userId,
-    $link: link,
-    $textoExtraido: textoExtraido,
-    $score: score,
-    $resultado: resultado,
-    $categoria: categoria,
-    $fontes: fontes
-  });
+
+
+  await db.execAsync(`
+
+    PRAGMA foreign_keys = ON;
+
+
+    CREATE TABLE IF NOT EXISTS users (
+
+      id TEXT PRIMARY KEY,
+
+      nome TEXT,
+
+      email TEXT UNIQUE,
+
+      plano TEXT DEFAULT 'gratis',
+
+      foto TEXT,
+
+      created_at TEXT 
+      DEFAULT (datetime('now','localtime')) 
+      NOT NULL
+
+    );
+
+
+
+    CREATE TABLE IF NOT EXISTS analises (
+
+      id TEXT PRIMARY KEY,
+
+      user_id TEXT NOT NULL,
+
+      link TEXT,
+
+      texto_extraido TEXT,
+
+      score INTEGER 
+      CHECK(score >= 0 AND score <= 100),
+
+      resultado TEXT,
+
+      categoria TEXT,
+
+      fontes TEXT DEFAULT '[]',
+
+      created_at TEXT 
+      DEFAULT (datetime('now','localtime')) 
+      NOT NULL,
+
+
+      FOREIGN KEY(user_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE
+
+    );
+
+
+
+
+    CREATE TABLE IF NOT EXISTS assinaturas (
+
+      id TEXT PRIMARY KEY,
+
+      user_id TEXT NOT NULL,
+
+      plano TEXT NOT NULL,
+
+      status TEXT NOT NULL,
+
+      metodo_pagamento TEXT,
+
+      expires_at TEXT,
+
+
+      created_at TEXT 
+      DEFAULT (datetime('now','localtime')) 
+      NOT NULL,
+
+
+      FOREIGN KEY(user_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE
+
+    );
+
+
+
+
+    CREATE TABLE IF NOT EXISTS uso_diario (
+
+      id TEXT PRIMARY KEY,
+
+      user_id TEXT NOT NULL,
+
+      data TEXT 
+      DEFAULT (date('now','localtime'))
+      NOT NULL,
+
+
+      quantidade INTEGER DEFAULT 1 NOT NULL,
+
+
+      UNIQUE(user_id,data),
+
+
+      FOREIGN KEY(user_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE
+
+    );
+
+  `);
+
+
+  console.log("Banco criado com sucesso!");
+
 }
 
-/**
- * TAREFA: CRIAR CONSULTAS
- * Busca os dados cadastrais de um usuário específico pelo ID.
- */
-export async function dbSelectUser(db: SQLiteDatabase, userId: string): Promise<User | null> {
-  const query = `SELECT * FROM users WHERE id = $userId;`;
-  const result = await db.getFirstAsync<User>(query, { $userId: userId });
-  return result;
+
+
+// ==========================================
+// INSERT USER
+// ==========================================
+
+
+export async function dbInsertUser(
+  db: SQLiteDatabase,
+  id:string,
+  nome:string,
+  email:string,
+  foto?:string
+
+){
+
+
+ await db.runAsync(
+
+ `
+ INSERT INTO users
+ (
+ id,
+ nome,
+ email,
+ foto
+ )
+
+ VALUES
+ (
+ $id,
+ $nome,
+ $email,
+ $foto
+ )
+
+ `,
+
+
+ {
+
+ $id:id,
+ $nome:nome,
+ $email:email,
+ $foto:foto ?? null
+
+ }
+
+
+ );
+
 }
 
-/**
- * TAREFA: CRIAR CONSULTAS
- * Busca todo o histórico de análises feitas por um usuário específico (utilizado na tela Verificadas).
- */
-export async function dbSelectUserAnalises(db: SQLiteDatabase, userId: string): Promise<Analise[]> {
-  const query = `SELECT * FROM analises WHERE user_id = $userId ORDER BY created_at DESC;`;
-  const results = await db.getAllAsync<Analise>(query, { $userId: userId });
-  return results;
+
+
+
+// ==========================================
+// INSERT ANALISE
+// ==========================================
+
+
+export async function dbInsertAnalise(
+
+db:SQLiteDatabase,
+
+id:string,
+
+userId:string,
+
+link:string | null,
+
+textoExtraido:string | null,
+
+score:number,
+
+resultado:string,
+
+categoria:string,
+
+fontes:string="[]"
+
+){
+
+
+
+await db.runAsync(
+
+`
+
+INSERT INTO analises
+
+(
+
+id,
+user_id,
+link,
+texto_extraido,
+score,
+resultado,
+categoria,
+fontes
+
+)
+
+
+VALUES
+
+
+(
+
+$id,
+$userId,
+$link,
+$textoExtraido,
+$score,
+$resultado,
+$categoria,
+$fontes
+
+)
+
+`,
+
+
+{
+
+$id:id,
+
+$userId:userId,
+
+$link:link,
+
+$textoExtraido:textoExtraido,
+
+$score:score,
+
+$resultado:resultado,
+
+$categoria:categoria,
+
+$fontes:fontes
+
+
 }
 
-/**
- * TAREFA: CRIAR ATUALIZAÇÕES
- * Atualiza o plano do usuário (Ex: de 'gratis' para 'premium' na tela de Planos/Pagamentos).
- */
-export async function dbUpdateUserPlano(db: SQLiteDatabase, userId: string, novoPlano: string): Promise<void> {
-  const query = `UPDATE users SET plano = $novoPlano WHERE id = $userId;`;
-  await db.runAsync(query, { $novoPlano: novoPlano, $userId: userId });
+
+);
+
+
 }
 
-/**
- * TAREFA: CRIAR REMOÇÕES
- * Remove uma análise específica do histórico do usuário.
- */
-export async function dbDeleteAnalise(db: SQLiteDatabase, analiseId: string): Promise<void> {
-  const query = `DELETE FROM analises WHERE id = $analiseId;`;
-  await db.runAsync(query, { $analiseId: analiseId });
+
+
+
+
+// ==========================================
+// BUSCAR USER
+// ==========================================
+
+
+export async function dbSelectUser(
+
+db:SQLiteDatabase,
+
+userId:string
+
+){
+
+
+return await db.getFirstAsync<User>(
+
+`
+
+SELECT *
+
+FROM users
+
+WHERE id=$id
+
+`,
+
+{
+
+$id:userId
+
 }
 
-/**
- * TAREFA: CRIAR REMOÇÕES
- * Remove a conta do usuário por completo.
- * Nota: Devido à nossa regra FOREIGN KEY ON DELETE CASCADE configurada na estrutura do banco,
- * deletar o usuário deletará automaticamente todas as suas análises, assinaturas e uso diário!
- */
-export async function dbDeleteUser(db: SQLiteDatabase, userId: string): Promise<void> {
-  const query = `DELETE FROM users WHERE id = $userId;`;
-  await db.runAsync(query, { $userId: userId });
+);
+
+
 }
 
-/**
- * BÔNUS: CONTROLE DE USO DIÁRIO
- * Registra ou incrementa o uso diário de análises para controle de limites do plano gratuito.
- */
-export async function dbIncrementarUsoDiario(db: SQLiteDatabase, userId: string): Promise<void> {
-  const hoje = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
-  const idUso = `${userId}_${hoje}`;
 
-  const query = `
-    INSERT INTO uso_diario (id, user_id, data, quantidade)
-    VALUES ($id, $userId, $hoje, 1)
-    ON CONFLICT(user_id, data) DO UPDATE SET quantidade = quantidade + 1;
-  `;
-  await db.runAsync(query, { $id: idUso, $userId: userId, $hoje: hoje });
+
+
+
+
+
+// ==========================================
+// BUSCAR ANALISES
+// ==========================================
+
+
+export async function dbSelectUserAnalises(
+
+db:SQLiteDatabase,
+
+userId:string
+
+){
+
+
+
+return await db.getAllAsync<Analise>(
+
+`
+
+SELECT *
+
+FROM analises
+
+WHERE user_id=$id
+
+ORDER BY created_at DESC
+
+
+`,
+
+{
+
+$id:userId
+
+}
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================================
+// ALTERAR PLANO
+// ==========================================
+
+
+export async function dbUpdateUserPlano(
+
+db:SQLiteDatabase,
+
+userId:string,
+
+novoPlano:string
+
+
+){
+
+
+
+await db.runAsync(
+
+`
+
+UPDATE users
+
+SET plano=$plano
+
+WHERE id=$id
+
+
+`,
+
+{
+
+$id:userId,
+
+$plano:novoPlano
+
+}
+
+
+);
+
+
+
+}
+
+
+
+
+
+
+// ==========================================
+// DELETAR ANALISE
+// ==========================================
+
+
+export async function dbDeleteAnalise(
+
+db:SQLiteDatabase,
+
+id:string
+
+){
+
+
+await db.runAsync(
+
+`
+
+DELETE FROM analises
+
+WHERE id=$id
+
+`,
+
+{
+
+$id:id
+
+}
+
+);
+
+
+}
+
+
+
+
+
+
+
+// ==========================================
+// DELETAR USUARIO
+// ==========================================
+
+
+export async function dbDeleteUser(
+
+db:SQLiteDatabase,
+
+id:string
+
+){
+
+
+await db.runAsync(
+
+`
+
+DELETE FROM users
+
+WHERE id=$id
+
+`,
+
+{
+
+$id:id
+
+}
+
+);
+
+
+
+}
+
+
+
+
+
+// ==========================================
+// CONTROLE USO DIARIO
+// ==========================================
+
+
+export async function dbIncrementarUsoDiario(
+
+db:SQLiteDatabase,
+
+userId:string
+
+){
+
+
+const hoje = new Date()
+.toISOString()
+.split("T")[0];
+
+
+
+await db.runAsync(
+
+`
+
+INSERT INTO uso_diario
+
+(
+
+id,
+
+user_id,
+
+data,
+
+quantidade
+
+)
+
+
+VALUES
+
+(
+
+$id,
+
+$userId,
+
+$data,
+
+1
+
+)
+
+
+
+ON CONFLICT(user_id,data)
+
+DO UPDATE SET
+
+quantidade = quantidade + 1
+
+
+`,
+
+{
+
+$id:`${userId}_${hoje}`,
+
+$userId:userId,
+
+$data:hoje
+
+
+}
+
+
+);
+
+
+
 }
