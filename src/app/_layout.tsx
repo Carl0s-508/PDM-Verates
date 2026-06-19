@@ -1,6 +1,5 @@
 import { Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
-import { Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { initializeDatabase } from "../database/databaseInit";
 
@@ -17,16 +16,12 @@ function AppStack() {
 export default function Layout() {
   return (
     <SafeAreaProvider>
-      {Platform.OS === "web" ? (
+      <SQLiteProvider
+        databaseName="database.db"
+        onInit={initializeDatabase}
+      >
         <AppStack />
-      ) : (
-        <SQLiteProvider
-          databaseName="database.db"
-          onInit={initializeDatabase}
-        >
-          <AppStack />
-        </SQLiteProvider>
-      )}
+      </SQLiteProvider>
     </SafeAreaProvider>
   );
 }

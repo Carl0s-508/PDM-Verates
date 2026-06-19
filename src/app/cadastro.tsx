@@ -27,7 +27,7 @@ const isSmallDevice = height < 700;
 const isVerySmallDevice = height < 620;
 
 export default function Cadastro() {
-  const db = useSQLiteContext();
+const db = useSQLiteContext();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
