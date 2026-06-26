@@ -35,7 +35,6 @@ export default function Verificar() {
         duration: 300,
         useNativeDriver: false,
       }),
-
       Animated.timing(overlayOpacity, {
         toValue: 0.4,
         duration: 300,
@@ -51,7 +50,6 @@ export default function Verificar() {
         duration: 300,
         useNativeDriver: false,
       }),
-
       Animated.timing(overlayOpacity, {
         toValue: 0,
         duration: 300,
@@ -85,7 +83,6 @@ export default function Verificar() {
                   source={require("../assets/Plus.png")}
                   style={styles.plusIcon}
                 />
-
                 <Text style={styles.plusText}>Plus</Text>
               </TouchableOpacity>
             </View>
@@ -108,10 +105,8 @@ export default function Verificar() {
                     source={require("../assets/paperclip.png")}
                     style={styles.icon}
                   />
-
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.cardTitle}>Analisar link</Text>
-
                     <Text style={styles.cardSubtitle}>
                       Cole o link de uma notícia{"\n"}ou página
                     </Text>
@@ -119,15 +114,16 @@ export default function Verificar() {
                 </TouchableOpacity>
 
                 {/* TEXTO */}
-                <TouchableOpacity style={styles.optionCard}>
+                <TouchableOpacity
+                  style={styles.optionCard}
+                  onPress={() => router.push("/analisarTexto" as any)}
+                >
                   <Image
                     source={require("../assets/textT.png")}
                     style={styles.icon}
                   />
-
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.cardTitle}>Analisar texto</Text>
-
                     <Text style={styles.cardSubtitle}>
                       Cole ou digite o conteúdo
                     </Text>
@@ -140,10 +136,8 @@ export default function Verificar() {
                     source={require("../assets/image.png")}
                     style={styles.icon}
                   />
-
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.cardTitle}>Analisar imagem</Text>
-
                     <Text style={styles.cardSubtitle}>
                       Envie ou cole uma imagem
                     </Text>
@@ -157,7 +151,6 @@ export default function Verificar() {
                   source={require("../assets/shield-check.png")}
                   style={styles.footerIcon}
                 />
-
                 <Text style={styles.footerText}>
                   Nossa IA verifica múltiplas fontes confiáveis no mundo todo
                 </Text>
@@ -180,12 +173,10 @@ export default function Verificar() {
         pointerEvents={open ? "auto" : "none"}
         style={[styles.sidebar, { left: sidebarAnim }]}
       >
-        {/* FECHAR */}
         <TouchableOpacity onPress={closeSidebar}>
           <Text style={styles.close}>✕</Text>
         </TouchableOpacity>
 
-        {/* PERFIL */}
         <TouchableOpacity
           style={styles.profileContainer}
           onPress={() => {
@@ -197,17 +188,14 @@ export default function Verificar() {
             source={require("../assets/profile.png")}
             style={styles.profileImage}
           />
-
           <View>
             <Text style={styles.profileName}>Afonso Filho</Text>
-
             <Text style={styles.profilePlan}>Plano Gratuito</Text>
           </View>
         </TouchableOpacity>
 
         <Text style={styles.sidebarTitle}>Menu</Text>
 
-        {/* HISTÓRICO */}
         <TouchableOpacity
           style={styles.sidebarCard}
           onPress={() => {
@@ -219,11 +207,9 @@ export default function Verificar() {
             source={require("../assets/history.png")}
             style={styles.sidebarImageIcon}
           />
-
           <Text style={styles.sidebarText}>Histórico</Text>
         </TouchableOpacity>
 
-        {/* VERIFICAÇÕES */}
         <TouchableOpacity
           style={styles.sidebarCard}
           onPress={() => {
@@ -235,11 +221,9 @@ export default function Verificar() {
             source={require("../assets/verified.png")}
             style={styles.sidebarImageIcon}
           />
-
           <Text style={styles.sidebarText}>Verificações</Text>
         </TouchableOpacity>
 
-        {/* CONFIGURAÇÕES */}
         <TouchableOpacity
           style={styles.sidebarCard}
           onPress={() => {
@@ -251,13 +235,14 @@ export default function Verificar() {
             source={require("../assets/settings.png")}
             style={styles.sidebarImageIcon}
           />
-
           <Text style={styles.sidebarText}>Configurações</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
   );
 }
+
+/* ===== ESTILOS (UI ANTIGA MANTIDA) ===== */
 
 const styles = StyleSheet.create({
   background: {
@@ -266,10 +251,7 @@ const styles = StyleSheet.create({
     paddingTop: isVerySmallDevice ? 18 : 32,
   },
 
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 30,
-  },
+  scrollContainer: { flexGrow: 1, paddingBottom: 30 },
 
   header: {
     flexDirection: "row",
@@ -285,12 +267,9 @@ const styles = StyleSheet.create({
   plusButton: {
     flexDirection: "row",
     alignItems: "center",
-
     borderWidth: 1.5,
     borderColor: "#702516",
-
     borderRadius: 28,
-
     paddingHorizontal: isSmallDevice ? 16 : 20,
     paddingVertical: isSmallDevice ? 8 : 10,
   },
@@ -318,77 +297,42 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
     maxWidth: 480,
-
-    backgroundColor: "#ffffff",
-
+    backgroundColor: "#fff",
     borderRadius: 24,
-
     paddingVertical: isVerySmallDevice ? 22 : 32,
     paddingHorizontal: isVerySmallDevice ? 18 : 24,
-
-    elevation: 8,
-
-    alignItems: "center",
-
     borderWidth: 2,
     borderColor: "#702516e4",
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 4,
-      height: 6,
-    },
-
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
+    elevation: 8,
   },
 
   title: {
     fontSize: isVerySmallDevice ? 22 : 26,
     color: "#702516",
-    textAlign: "center",
-
-    marginBottom: 12,
-
     fontWeight: "bold",
-
-    letterSpacing: 1.5,
+    textAlign: "center",
   },
 
   subtitle: {
     fontSize: isVerySmallDevice ? 14 : 16,
     color: "#666",
-
     textAlign: "center",
-
-    marginBottom: isVerySmallDevice ? 20 : 28,
-
-    letterSpacing: 0.5,
-
-    lineHeight: isVerySmallDevice ? 22 : 24,
+    marginBottom: 24,
   },
 
   optionCard: {
     flexDirection: "row",
     alignItems: "center",
-
     backgroundColor: "#d9d9d98d",
-
     borderRadius: 20,
-
     padding: isVerySmallDevice ? 16 : 20,
-
     marginBottom: 18,
-
     borderWidth: 1.5,
     borderColor: "#702516aa",
-
     width: "100%",
   },
 
-  optionTextContainer: {
-    flex: 1,
-  },
+  optionTextContainer: { flex: 1 },
 
   icon: {
     width: isVerySmallDevice ? 36 : 44,
@@ -400,88 +344,51 @@ const styles = StyleSheet.create({
     fontSize: isVerySmallDevice ? 16 : 18,
     fontWeight: "bold",
     color: "#702516",
-    letterSpacing: 1,
   },
 
   cardSubtitle: {
     fontSize: isVerySmallDevice ? 13 : 15,
     color: "#444",
-    letterSpacing: 0.5,
-    marginTop: 2,
   },
 
   footerCard: {
     marginTop: 20,
-
-    backgroundColor: "#ffffff",
-
-    borderRadius: 20,
-
-    paddingVertical: isVerySmallDevice ? 12 : 14,
-    paddingHorizontal: isVerySmallDevice ? 14 : 16,
-
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-
     borderWidth: 1.5,
     borderColor: "#8B3A2E",
-
-    width: "100%",
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 4,
-      height: 6,
-    },
-
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
+    borderRadius: 20,
+    padding: 14,
   },
 
   footerIcon: {
-    width: isVerySmallDevice ? 18 : 22,
-    height: isVerySmallDevice ? 18 : 22,
+    width: 20,
+    height: 20,
     marginRight: 8,
-    tintColor: "#282828",
   },
 
   footerText: {
-    fontSize: isVerySmallDevice ? 12 : 14,
+    fontSize: 13,
     color: "#555",
-
-    textAlign: "center",
-
-    letterSpacing: 0.5,
-
-    maxWidth: 260,
+    flex: 1,
   },
 
   overlay: {
     position: "absolute",
     top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-
     backgroundColor: "#000",
-
-    zIndex: 5,
   },
 
   sidebar: {
     position: "absolute",
-
     top: 0,
     bottom: 0,
-
     width: width * 0.8,
-
     backgroundColor: "#fff",
-
-    padding: isVerySmallDevice ? 20 : 28,
-
-    zIndex: 10,
+    padding: 28,
   },
 
   close: {
@@ -490,72 +397,59 @@ const styles = StyleSheet.create({
   },
 
   sidebarTitle: {
-    fontSize: isVerySmallDevice ? 22 : 26,
+    fontSize: 26,
     fontWeight: "bold",
-
     marginVertical: 28,
-
     color: "#702516",
   },
 
   sidebarCard: {
     flexDirection: "row",
     alignItems: "center",
-
-    padding: isVerySmallDevice ? 14 : 16,
-
+    padding: 16,
     borderRadius: 16,
-
     marginBottom: 16,
-
     borderWidth: 1,
     borderColor: "#ddd",
   },
 
   sidebarText: {
-    fontSize: isVerySmallDevice ? 15 : 17,
+    fontSize: 17,
     color: "#333",
   },
 
   profileContainer: {
     flexDirection: "row",
     alignItems: "center",
-
     marginTop: 10,
     marginBottom: 30,
-
     paddingBottom: 20,
-
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5E5",
   },
 
   profileImage: {
-    width: isVerySmallDevice ? 52 : 60,
-    height: isVerySmallDevice ? 52 : 60,
-
+    width: 60,
+    height: 60,
     borderRadius: 30,
-
     marginRight: 12,
   },
 
   profileName: {
-    fontSize: isVerySmallDevice ? 16 : 18,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#702516",
   },
 
   profilePlan: {
-    fontSize: isVerySmallDevice ? 12 : 14,
+    fontSize: 14,
     color: "#777",
   },
 
   sidebarImageIcon: {
-    width: isVerySmallDevice ? 20 : 24,
-    height: isVerySmallDevice ? 20 : 24,
-
+    width: 24,
+    height: 24,
     marginRight: 12,
-
     resizeMode: "contain",
   },
 });

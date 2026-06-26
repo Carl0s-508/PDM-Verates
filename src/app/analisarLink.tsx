@@ -18,722 +18,350 @@ import {
   dbIncrementarUsoDiario,
 } from "../database/databaseInit";
 
-
 // ==============================
 // TELA PRINCIPAL
 // ==============================
 
 export default function AnalisarLink() {
-
-const db = Platform.OS !== "web"
-    ? useDatabase()
-    : null;
-
+  const db = Platform.OS !== "web" ? useDatabase() : null;
 
   const [link, setLink] = useState("");
 
-
-
   async function analisarNoticia() {
-
-
     if (!link.trim()) return;
-
-
-
     try {
-
-
       const score = gerarScore();
-
       const resultado = definirResultado(score);
-
-
       const userId = "user_logado_id";
-
       const analiseId = `anl_${Date.now()}`;
-
-
-
       if (db) {
-
-
         await dbInsertAnalise(
-
           db,
-
           analiseId,
-
           userId,
-
           link,
-
           "Conteúdo extraído do link analisado.",
-
           score,
-
           resultado,
-
-          "Geral"
-
+          "Geral",
         );
-
-
-
         await dbIncrementarUsoDiario(
-
           db,
-
-          userId
-
+          userId,
         );
-
-
       }
 
-
-
       router.push({
-
         pathname: "/resultado",
 
         params: {
-
           score: String(score),
-
         },
-
       });
-
-
-
-    } catch(error) {
-
-
-      console.error(
-        "Erro ao salvar análise:",
-        error
-      );
-
-
+    } catch (error) {
+      console.error("Erro ao salvar análise:", error);
     }
-
-
   }
-
-
-
-
 
   if (Platform.OS === "web") {
-
     return <WebMessage />;
-
   }
 
-
-
-
-
   return (
-
     <ImageBackground
-
       source={require("../assets/Background.png")}
-
       style={styles.background}
-
     >
-
-
-
       <Header />
 
-
-
       <View style={styles.content}>
-
-
         <View style={styles.card}>
-
-
-          <Text style={styles.title}>
-
-            Insira o link
-
-          </Text>
-
-
+          <Text style={styles.title}>Insira o link</Text>
 
           <Text style={styles.subtitle}>
-
             Cole o link da notícia que deseja verificar.
-
           </Text>
 
-
-
-
           <TextInput
-
             style={styles.input}
-
             placeholder="https://exemplo.com/noticia"
-
             placeholderTextColor="#666"
-
             value={link}
-
             onChangeText={setLink}
-
             autoCapitalize="none"
-
           />
 
+          <TouchableOpacity style={styles.button} onPress={analisarNoticia}>
+            <Text style={styles.buttonText}>Analisar a notícia</Text>
 
-
-
-          <TouchableOpacity
-
-            style={styles.button}
-
-            onPress={analisarNoticia}
-
-          >
-
-
-
-            <Text style={styles.buttonText}>
-
-              Analisar a notícia
-
-            </Text>
-
-
-
-
-            <Image
-
-              source={require("../assets/send.png")}
-
-              style={styles.icon}
-
-            />
-
-
-
+            <Image source={require("../assets/send.png")} style={styles.icon} />
           </TouchableOpacity>
-
-
-
-
         </View>
 
-
-
-
         <SecurityCard />
-
-
-
       </View>
-
-
-
-
     </ImageBackground>
-
   );
-
 }
-
-
-
-
 
 // ==============================
 // COMPONENTES
 // ==============================
 
-
-function Header(){
-
-
+function Header() {
   return (
-
     <View style={styles.header}>
-
-
-      <TouchableOpacity
-
-        style={styles.backButton}
-
-        onPress={() => router.back()}
-
-      >
-
-        <Text style={styles.backText}>
-
-          ←
-
-        </Text>
-
-
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Text style={styles.backText}>←</Text>
       </TouchableOpacity>
 
-
-
-
-
       <TouchableOpacity
-
         style={styles.plusButton}
-
         onPress={() => router.push("/planos" as any)}
-
       >
+        <Image source={require("../assets/Plus.png")} style={styles.icon} />
 
-
-
-        <Image
-
-          source={require("../assets/Plus.png")}
-
-          style={styles.icon}
-
-        />
-
-
-
-        <Text style={styles.plusText}>
-
-          Plus
-
-        </Text>
-
-
-
+        <Text style={styles.plusText}>Plus</Text>
       </TouchableOpacity>
-
-
-
     </View>
-
   );
-
-
 }
 
-
-
-
-
-function SecurityCard(){
-
-
+function SecurityCard() {
   return (
-
     <View style={styles.securityCard}>
-
-
       <Image
-
         source={require("../assets/lock.png")}
-
         style={styles.securityIcon}
-
       />
 
-
-
       <Text style={styles.securityText}>
-
         Seus dados são totalmente protegidos.
-
       </Text>
-
-
-
     </View>
-
   );
-
-
 }
 
-
-
-
-
-function WebMessage(){
-
-
+function WebMessage() {
   return (
-
     <View style={styles.webMessage}>
-
-
-      <Text>
-
-        SQLite disponível somente no aplicativo.
-
-      </Text>
-
-
+      <Text>SQLite disponível somente no aplicativo.</Text>
     </View>
-
-
   );
-
-
 }
-
-
-
-
 
 // ==============================
 // FUNÇÕES AUXILIARES
 // ==============================
 
-
-function gerarScore(){
-
+function gerarScore() {
   return Math.floor(Math.random() * 100);
-
 }
 
+function definirResultado(score: number) {
+  if (score >= 80) return "Alta confiabilidade";
 
-
-function definirResultado(score:number){
-
-
-  if(score >= 80)
-
-    return "Alta confiabilidade";
-
-
-
-  if(score >= 50)
-
-    return "Confiabilidade moderada";
-
-
+  if (score >= 50) return "Confiabilidade moderada";
 
   return "Baixa confiabilidade";
-
-
 }
-
-
-
-
 
 // ==============================
 // ESTILOS
 // ==============================
 
-
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
 
+    paddingHorizontal: 24,
 
-  background:{
-
-    flex:1,
-
-    paddingHorizontal:24,
-
-    paddingTop:55,
-
+    paddingTop: 55,
   },
 
+  header: {
+    flexDirection: "row",
 
+    justifyContent: "space-between",
 
-  header:{
-
-
-    flexDirection:"row",
-
-    justifyContent:"space-between",
-
-    alignItems:"center",
-
-
+    alignItems: "center",
   },
 
+  backButton: {
+    width: 55,
 
+    height: 55,
 
-  backButton:{
+    borderRadius: 999,
 
+    backgroundColor: "#FFF",
 
-    width:55,
+    justifyContent: "center",
 
-    height:55,
+    alignItems: "center",
 
-    borderRadius:999,
+    borderWidth: 2,
 
-    backgroundColor:"#FFF",
-
-    justifyContent:"center",
-
-    alignItems:"center",
-
-    borderWidth:2,
-
-    borderColor:"#702516",
-
-
+    borderColor: "#702516",
   },
 
+  backText: {
+    fontSize: 28,
 
+    color: "#702516",
 
-  backText:{
-
-
-    fontSize:28,
-
-    color:"#702516",
-
-    fontWeight:"bold",
-
-
+    fontWeight: "bold",
   },
 
+  plusButton: {
+    flexDirection: "row",
 
+    alignItems: "center",
 
-  plusButton:{
+    borderWidth: 2,
 
+    borderColor: "#702516",
 
-    flexDirection:"row",
+    borderRadius: 30,
 
-    alignItems:"center",
+    paddingHorizontal: 20,
 
-    borderWidth:2,
-
-    borderColor:"#702516",
-
-    borderRadius:30,
-
-    paddingHorizontal:20,
-
-    paddingVertical:10,
-
-
+    paddingVertical: 10,
   },
 
+  plusText: {
+    color: "#702516",
 
+    fontWeight: "700",
 
-  plusText:{
-
-
-    color:"#702516",
-
-    fontWeight:"700",
-
-    marginLeft:6,
-
-
+    marginLeft: 6,
   },
 
+  content: {
+    flex: 1,
 
-
-  content:{
-
-
-    flex:1,
-
-    justifyContent:"center",
-
-
+    justifyContent: "center",
   },
 
+  card: {
+    backgroundColor: "#FFF",
 
+    borderRadius: 28,
 
-  card:{
+    padding: 30,
 
+    alignItems: "center",
 
-    backgroundColor:"#FFF",
+    borderWidth: 2,
 
-    borderRadius:28,
-
-    padding:30,
-
-    alignItems:"center",
-
-    borderWidth:2,
-
-    borderColor:"#702516",
-
-
+    borderColor: "#702516",
   },
 
+  title: {
+    fontSize: 36,
 
+    fontWeight: "bold",
 
-  title:{
+    color: "#702516",
 
-
-    fontSize:36,
-
-    fontWeight:"bold",
-
-    color:"#702516",
-
-    marginBottom:15,
-
-
+    marginBottom: 15,
   },
 
+  subtitle: {
+    fontSize: 16,
 
+    textAlign: "center",
 
-  subtitle:{
+    color: "#444",
 
-
-    fontSize:16,
-
-    textAlign:"center",
-
-    color:"#444",
-
-    marginBottom:30,
-
-
+    marginBottom: 30,
   },
 
+  input: {
+    width: "100%",
 
+    height: 72,
 
-  input:{
+    backgroundColor: "#F4F4F4",
 
+    borderRadius: 20,
 
-    width:"100%",
+    borderWidth: 2,
 
-    height:72,
+    borderColor: "#8A4A3B",
 
-    backgroundColor:"#F4F4F4",
-
-    borderRadius:20,
-
-    borderWidth:2,
-
-    borderColor:"#8A4A3B",
-
-    paddingHorizontal:18,
-
-
+    paddingHorizontal: 18,
   },
 
+  button: {
+    marginTop: 25,
 
+    height: 58,
 
-  button:{
+    width: "100%",
 
+    backgroundColor: "#6B2416",
 
-    marginTop:25,
+    borderRadius: 18,
 
-    height:58,
+    flexDirection: "row",
 
-    width:"100%",
+    justifyContent: "center",
 
-    backgroundColor:"#6B2416",
-
-    borderRadius:18,
-
-    flexDirection:"row",
-
-    justifyContent:"center",
-
-    alignItems:"center",
-
-
+    alignItems: "center",
   },
 
+  buttonText: {
+    color: "#FFF",
 
+    fontSize: 18,
 
-  buttonText:{
+    fontWeight: "600",
 
-
-    color:"#FFF",
-
-    fontSize:18,
-
-    fontWeight:"600",
-
-    marginRight:10,
-
-
+    marginRight: 10,
   },
 
+  icon: {
+    width: 22,
 
-
-  icon:{
-
-
-    width:22,
-
-    height:22,
-
-
+    height: 22,
   },
 
+  securityCard: {
+    marginTop: 22,
 
+    backgroundColor: "#FFF",
 
-  securityCard:{
+    borderRadius: 20,
 
+    borderWidth: 2,
 
-    marginTop:22,
+    borderColor: "#8A4A3B",
 
-    backgroundColor:"#FFF",
+    padding: 18,
 
-    borderRadius:20,
+    flexDirection: "row",
 
-    borderWidth:2,
-
-    borderColor:"#8A4A3B",
-
-    padding:18,
-
-    flexDirection:"row",
-
-    alignItems:"center",
-
-
+    alignItems: "center",
   },
 
+  securityIcon: {
+    width: 24,
 
+    height: 24,
 
-  securityIcon:{
-
-
-    width:24,
-
-    height:24,
-
-    marginRight:12,
-
-
+    marginRight: 12,
   },
 
-
-
-  securityText:{
-
-
-    color:"#4A4A4A",
-
-
+  securityText: {
+    color: "#4A4A4A",
   },
 
+  webMessage: {
+    flex: 1,
 
+    justifyContent: "center",
 
-  webMessage:{
-
-
-    flex:1,
-
-    justifyContent:"center",
-
-    alignItems:"center",
-
-
+    alignItems: "center",
   },
-
-
 });

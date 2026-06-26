@@ -26,63 +26,77 @@ export interface Analise {
 }
 
 // ==========================================
-// CRIAÇÃO DO BANCO
+// CONTROLE DE INIT (🔥 FIX PRINCIPAL)
+// ==========================================
+
+let isInitialized = false;
+
+// ==========================================
+// CRIAÇÃO DO BANCO (SEGURA)
 // ==========================================
 
 export async function initializeDatabase(db: SQLiteDatabase) {
-  await db.execAsync(`
+  // 🔥 impede execução dupla (principal causa do teu erro)
+  if (isInitialized) return;
 
-    PRAGMA foreign_keys = ON;
+  isInitialized = true;
 
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      nome TEXT,
-      email TEXT UNIQUE,
-      plano TEXT DEFAULT 'gratis',
-      foto TEXT,
-      created_at TEXT DEFAULT (datetime('now','localtime')) NOT NULL
-    );
+  try {
+    await db.execAsync(`
+      PRAGMA foreign_keys = ON;
+      PRAGMA journal_mode = WAL;
 
-    CREATE TABLE IF NOT EXISTS analises (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      link TEXT,
-      texto_extraido TEXT,
-      score INTEGER CHECK(score >= 0 AND score <= 100),
-      resultado TEXT,
-      categoria TEXT,
-      fontes TEXT DEFAULT '[]',
-      created_at TEXT DEFAULT (datetime('now','localtime')) NOT NULL,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        nome TEXT,
+        email TEXT UNIQUE,
+        plano TEXT DEFAULT 'gratis',
+        foto TEXT,
+        created_at TEXT DEFAULT (datetime('now','localtime')) NOT NULL
+      );
 
-    CREATE TABLE IF NOT EXISTS assinaturas (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      plano TEXT NOT NULL,
-      status TEXT NOT NULL,
-      metodo_pagamento TEXT,
-      expires_at TEXT,
-      created_at TEXT DEFAULT (datetime('now','localtime')) NOT NULL,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
+      CREATE TABLE IF NOT EXISTS analises (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        link TEXT,
+        texto_extraido TEXT,
+        score INTEGER CHECK(score >= 0 AND score <= 100),
+        resultado TEXT,
+        categoria TEXT,
+        fontes TEXT DEFAULT '[]',
+        created_at TEXT DEFAULT (datetime('now','localtime')) NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
 
-    CREATE TABLE IF NOT EXISTS uso_diario (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      data TEXT DEFAULT (date('now','localtime')) NOT NULL,
-      quantidade INTEGER DEFAULT 1 NOT NULL,
-      UNIQUE(user_id, data),
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
+      CREATE TABLE IF NOT EXISTS assinaturas (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        plano TEXT NOT NULL,
+        status TEXT NOT NULL,
+        metodo_pagamento TEXT,
+        expires_at TEXT,
+        created_at TEXT DEFAULT (datetime('now','localtime')) NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
 
-  `);
+      CREATE TABLE IF NOT EXISTS uso_diario (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        data TEXT DEFAULT (date('now','localtime')) NOT NULL,
+        quantidade INTEGER DEFAULT 1 NOT NULL,
+        UNIQUE(user_id, data),
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
 
-  console.log("Banco criado com sucesso!");
+    console.log("✅ Banco criado com sucesso!");
+  } catch (error) {
+    console.error("❌ Erro ao inicializar banco:", error);
+  }
 }
 
 // ==========================================
-// INSERIR USUÁRIO
+// INSERT USER
 // ==========================================
 
 export async function dbInsertUser(
@@ -90,7 +104,7 @@ export async function dbInsertUser(
   id: string,
   nome: string,
   email: string,
-  foto?: string,
+  foto?: string
 ) {
   await db.runAsync(
     `
@@ -104,12 +118,12 @@ export async function dbInsertUser(
       $nome: nome,
       $email: email,
       $foto: foto ?? null,
-    },
+    }
   );
 }
 
 // ==========================================
-// INSERIR ANÁLISE
+// INSERT ANÁLISE
 // ==========================================
 
 export async function dbInsertAnalise(
@@ -121,7 +135,7 @@ export async function dbInsertAnalise(
   score: number,
   resultado: string,
   categoria: string,
-  fontes: string = "[]",
+  fontes: string = "[]"
 ) {
   await db.runAsync(
     `
@@ -139,12 +153,12 @@ export async function dbInsertAnalise(
       $resultado: resultado,
       $categoria: categoria,
       $fontes: fontes,
-    },
+    }
   );
 }
 
 // ==========================================
-// BUSCAR USUÁRIO
+// SELECT USER
 // ==========================================
 
 export async function dbSelectUser(db: SQLiteDatabase, userId: string) {
@@ -152,12 +166,12 @@ export async function dbSelectUser(db: SQLiteDatabase, userId: string) {
     `
     SELECT * FROM users WHERE id=$id
     `,
-    { $id: userId },
+    { $id: userId }
   );
 }
 
 // ==========================================
-// BUSCAR ANÁLISES
+// SELECT ANÁLISES
 // ==========================================
 
 export async function dbSelectUserAnalises(db: SQLiteDatabase, userId: string) {
@@ -167,18 +181,18 @@ export async function dbSelectUserAnalises(db: SQLiteDatabase, userId: string) {
     WHERE user_id=$id
     ORDER BY created_at DESC
     `,
-    { $id: userId },
+    { $id: userId }
   );
 }
 
 // ==========================================
-// ALTERAR PLANO
+// UPDATE PLANO
 // ==========================================
 
 export async function dbUpdateUserPlano(
   db: SQLiteDatabase,
   userId: string,
-  novoPlano: string,
+  novoPlano: string
 ) {
   await db.runAsync(
     `
@@ -189,12 +203,12 @@ export async function dbUpdateUserPlano(
     {
       $id: userId,
       $plano: novoPlano,
-    },
+    }
   );
 }
 
 // ==========================================
-// DELETAR ANÁLISE
+// DELETE ANÁLISE
 // ==========================================
 
 export async function dbDeleteAnalise(db: SQLiteDatabase, id: string) {
@@ -203,12 +217,12 @@ export async function dbDeleteAnalise(db: SQLiteDatabase, id: string) {
     DELETE FROM analises
     WHERE id=$id
     `,
-    { $id: id },
+    { $id: id }
   );
 }
 
 // ==========================================
-// DELETAR USUÁRIO
+// DELETE USER
 // ==========================================
 
 export async function dbDeleteUser(db: SQLiteDatabase, id: string) {
@@ -217,17 +231,17 @@ export async function dbDeleteUser(db: SQLiteDatabase, id: string) {
     DELETE FROM users
     WHERE id=$id
     `,
-    { $id: id },
+    { $id: id }
   );
 }
 
 // ==========================================
-// CONTROLE USO DIÁRIO
+// USO DIÁRIO (FIX CONFLITO SAFE UPSERT)
 // ==========================================
 
 export async function dbIncrementarUsoDiario(
   db: SQLiteDatabase,
-  userId: string,
+  userId: string
 ) {
   const hoje = new Date().toLocaleDateString("en-CA");
 
@@ -240,12 +254,12 @@ export async function dbIncrementarUsoDiario(
 
     ON CONFLICT(user_id, data)
     DO UPDATE SET
-    quantidade = uso_diario.quantidade + 1
+    quantidade = quantidade + 1
     `,
     {
       $id: `${userId}_${hoje}`,
       $userId: userId,
       $data: hoje,
-    },
+    }
   );
 }

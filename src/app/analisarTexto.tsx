@@ -3,17 +3,14 @@ import { useState } from "react";
 import { useDatabase } from "../database/sqlite";
 
 import {
-  Dimensions,
   Image,
-  KeyboardAvoidingView,
+  ImageBackground,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Alert,
 } from "react-native";
 
 import {
@@ -23,34 +20,24 @@ import {
 
 import { analisarConteudoIA } from "../services/api";
 
-const { width, height } = Dimensions.get("window");
-
-const isSmallDevice = height < 700;
-const isVerySmallDevice = width < 360;
-
 // ==============================
-// TELA PRINCIPAL
+// SCREEN
 // ==============================
 
 export default function AnalisarTexto() {
   const db = Platform.OS !== "web" ? useDatabase() : null;
 
   const [conteudo, setConteudo] = useState("");
-  const [loading, setLoading] = useState(false);
 
   async function analisarConteudo() {
     if (!conteudo.trim()) return;
 
     try {
-      setLoading(true);
-
-      // 🔥 CHAMADA REAL PARA BACKEND (IA)
       const resultadoIA = await analisarConteudoIA(conteudo.trim());
 
       const userId = "user_logado_id";
       const analiseId = `anl_${Date.now()}`;
 
-      // 💾 SALVANDO NO BANCO LOCAL
       if (db) {
         await dbInsertAnalise(
           db,
@@ -66,82 +53,66 @@ export default function AnalisarTexto() {
         await dbIncrementarUsoDiario(db, userId);
       }
 
-      // 📲 IR PARA TELA DE RESULTADO
       router.push({
         pathname: "/resultado",
         params: {
           resultado: JSON.stringify(resultadoIA),
         },
       });
-
     } catch (error) {
-      console.error("Erro ao analisar conteúdo:", error);
-      Alert.alert("Erro", "Não foi possível analisar o conteúdo.");
-    } finally {
-      setLoading(false);
+      console.error("Erro ao analisar texto:", error);
     }
   }
 
-  const isDisabled = !conteudo.trim() || loading;
+  if (Platform.OS === "web") {
+    return <WebMessage />;
+  }
 
   return (
-    <View style={styles.background}>
-      <SideTab />
+    <ImageBackground
+      source={require("../assets/Background.png")}
+      style={styles.background}
+    >
+      <Header />
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <Header />
+      <View style={styles.content}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Insira o texto</Text>
 
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.content}>
-            <Text style={styles.title}>Insira o conteúdo</Text>
+          <Text style={styles.subtitle}>
+            Cole ou digite o conteúdo que deseja verificar.
+          </Text>
 
-            <Text style={styles.subtitle}>
-              Digite ou cole o conteúdo para análise de veracidade
-            </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Digite ou cole o texto aqui..."
+            placeholderTextColor="#666"
+            value={conteudo}
+            onChangeText={setConteudo}
+            multiline
+          />
 
-            <TextInput
-              style={styles.textArea}
-              placeholder="Ex: Notícia da cidade X..."
-              placeholderTextColor="#8a8a8a"
-              value={conteudo}
-              onChangeText={setConteudo}
-              multiline
-              textAlignVertical="top"
+          <TouchableOpacity
+            style={styles.button}
+            onPress={analisarConteudo}
+          >
+            <Text style={styles.buttonText}>Analisar o texto</Text>
+
+            <Image
+              source={require("../assets/send.png")}
+              style={styles.icon}
             />
+          </TouchableOpacity>
+        </View>
 
-            <TouchableOpacity
-              style={[styles.button, isDisabled && styles.buttonDisabled]}
-              onPress={analisarConteudo}
-              disabled={isDisabled}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.buttonText}>
-                {loading ? "Analisando..." : "Analisar o Conteúdo"}
-              </Text>
-
-              <Image
-                source={require("../assets/send.png")}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <SecurityCard />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+        <SecurityCard />
+      </View>
+    </ImageBackground>
   );
 }
 
 // ==============================
-// COMPONENTES
+// HEADER (IGUAL ANÁLISE LINK)
 // ==============================
 
 function Header() {
@@ -158,27 +129,27 @@ function Header() {
         style={styles.plusButton}
         onPress={() => router.push("/planos" as any)}
       >
-        <Text style={styles.crown}>♛</Text>
+        <Image
+          source={require("../assets/Plus.png")}
+          style={styles.plusIcon}
+        />
         <Text style={styles.plusText}>Plus</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-function SideTab() {
-  return (
-    <View style={styles.sideTab}>
-      <Text style={styles.sideTabDots}>⋮</Text>
-    </View>
-  );
-}
+// ==============================
+// SECURITY CARD (IGUAL)
+// ==============================
 
 function SecurityCard() {
   return (
     <View style={styles.securityCard}>
-      <View style={styles.lockCircle}>
-        <Text style={styles.lockIcon}>🔒</Text>
-      </View>
+      <Image
+        source={require("../assets/lock.png")}
+        style={styles.securityIcon}
+      />
 
       <Text style={styles.securityText}>
         Seus dados são totalmente protegidos.
@@ -188,60 +159,47 @@ function SecurityCard() {
 }
 
 // ==============================
-// ESTILOS
+// WEB MESSAGE
+// ==============================
+
+function WebMessage() {
+  return (
+    <View style={styles.webMessage}>
+      <Text>SQLite disponível somente no aplicativo.</Text>
+    </View>
+  );
+}
+
+// ==============================
+// STYLES (IGUAL ANÁLISE LINK)
 // ==============================
 
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: "#F2EDE9",
-  },
-
-  sideTab: {
-    position: "absolute",
-    left: 0,
-    top: height * 0.12,
-    width: 22,
-    height: 70,
-    backgroundColor: "#d9a89a8c",
-    borderTopRightRadius: 14,
-    borderBottomRightRadius: 14,
-    borderWidth: 1.5,
-    borderLeftWidth: 0,
-    borderColor: "#702516aa",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 2,
-  },
-
-  sideTabDots: {
-    fontSize: 18,
-    color: "#702516",
-    fontWeight: "bold",
+    paddingHorizontal: 24,
+    paddingTop: 55,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: isVerySmallDevice ? 18 : 24,
-    paddingTop: isVerySmallDevice ? 16 : 22,
   },
 
   backButton: {
-    width: 50,
-    height: 50,
+    width: 55,
+    height: 55,
     borderRadius: 999,
     backgroundColor: "#FFF",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
     borderColor: "#702516",
-    elevation: 3,
   },
 
   backText: {
-    fontSize: 24,
+    fontSize: 28,
     color: "#702516",
     fontWeight: "bold",
   },
@@ -249,119 +207,110 @@ const styles = StyleSheet.create({
   plusButton: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: "#702516",
     borderRadius: 30,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    backgroundColor: "#FFF",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
 
-  crown: {
-    fontSize: 14,
-    color: "#702516",
-    marginRight: 6,
+  plusIcon: {
+    width: 22,
+    height: 22,
   },
 
   plusText: {
     color: "#702516",
     fontWeight: "700",
-    fontSize: 15,
-  },
-
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: isVerySmallDevice ? 22 : 30,
-    paddingTop: isSmallDevice ? 24 : 36,
-    paddingBottom: 30,
+    marginLeft: 6,
   },
 
   content: {
-    width: "100%",
+    flex: 1,
+    justifyContent: "center",
+  },
+
+  card: {
+    backgroundColor: "#FFF",
+    borderRadius: 28,
+    padding: 30,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#702516",
   },
 
   title: {
-    fontSize: isVerySmallDevice ? 24 : 28,
+    fontSize: 36,
     fontWeight: "bold",
     color: "#702516",
-    marginBottom: 14,
+    marginBottom: 15,
   },
 
   subtitle: {
-    fontSize: isVerySmallDevice ? 13 : 14,
+    fontSize: 16,
+    textAlign: "center",
     color: "#444",
-    marginBottom: 22,
+    marginBottom: 30,
   },
 
-  textArea: {
+  input: {
     width: "100%",
-    minHeight: isVerySmallDevice ? 110 : 130,
+    height: 110,
     backgroundColor: "#F4F4F4",
-    borderRadius: 16,
-    borderWidth: 1.5,
+    borderRadius: 20,
+    borderWidth: 2,
     borderColor: "#8A4A3B",
-    padding: 16,
-    fontSize: 14,
-    marginBottom: 24,
+    paddingHorizontal: 18,
+    textAlignVertical: "top",
   },
 
   button: {
+    marginTop: 25,
     height: 58,
     width: "100%",
     backgroundColor: "#6B2416",
-    borderRadius: 999,
+    borderRadius: 18,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#3d120a",
-  },
-
-  buttonDisabled: {
-    opacity: 0.5,
   },
 
   buttonText: {
     color: "#FFF",
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "600",
     marginRight: 10,
   },
 
   icon: {
-    width: 20,
-    height: 20,
-    tintColor: "#FFF",
+    width: 22,
+    height: 22,
   },
 
   securityCard: {
-    marginTop: 30,
+    marginTop: 22,
     backgroundColor: "#FFF",
     borderRadius: 20,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: "#8A4A3B",
-    padding: 16,
+    padding: 18,
     flexDirection: "row",
     alignItems: "center",
   },
 
-  lockCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#F4F4F4",
-    justifyContent: "center",
-    alignItems: "center",
+  securityIcon: {
+    width: 24,
+    height: 24,
     marginRight: 12,
   },
 
-  lockIcon: {
-    fontSize: 14,
+  securityText: {
+    color: "#4A4A4A",
   },
 
-  securityText: {
+  webMessage: {
     flex: 1,
-    color: "#4A4A4A",
-    fontSize: 13,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
