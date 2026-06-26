@@ -1,14 +1,14 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Dimensions,
-    Image,
-    ImageBackground,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Image,
+  ImageBackground,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
@@ -19,41 +19,40 @@ const isVerySmallDevice = width < 360;
 export default function ResultadoAnalise() {
   const router = useRouter();
 
-  const { score } = useLocalSearchParams();
+  const { resultado } = useLocalSearchParams();
 
-  const porcentagem = Number(score) || 92;
+  // 🔥 CONVERTE JSON VINDO DO FRONT
+  const data = resultado ? JSON.parse(resultado as string) : null;
 
-  const getResultData = () => {
-    if (porcentagem >= 80) {
-      return {
-        titulo: "ALTA CONFIABILIDADE",
-        descricao:
-          "Nossa IA não encontrou indícios significativos de desinformação. O conteúdo é corroborado em diversas fontes confiáveis.",
-        cor: "#2F8F2F",
-        icon: require("../assets/shield-check.png"),
-      };
-    }
+  if (!data) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>Sem dados de análise</Text>
+      </View>
+    );
+  }
 
-    if (porcentagem >= 50) {
-      return {
-        titulo: "CONFIABILIDADE MODERADA",
-        descricao:
-          "Nossa IA encontrou alguns indícios de inconsistência. O conteúdo possui confirmação parcial em fontes confiáveis.",
-        cor: "#C46A00",
-        icon: require("../assets/Shield.png"),
-      };
-    }
+  // 🔥 NORMALIZA CAMPOS DA IA
+  const confianca =
+    typeof data.confiabilidade === "number"
+      ? data.confiabilidade
+      : 70;
 
-    return {
-      titulo: "BAIXA CONFIABILIDADE",
-      descricao:
-        "Nossa IA encontrou fortes indícios de desinformação. O conteúdo não é corroborado em diversas fontes confiáveis.",
-      cor: "#A00000",
-      icon: require("../assets/X.png"),
-    };
+  const isAlta = data.veracidade === true || data.veracidade === "true";
+
+  const result = {
+    titulo: isAlta
+      ? "ALTA CONFIABILIDADE"
+      : "VERIFICAÇÃO NECESSÁRIA",
+
+    descricao: data.resumo || "Sem resumo disponível.",
+
+    cor: isAlta ? "#2F8F2F" : "#C46A00",
+
+    icon: isAlta
+      ? require("../assets/shield-check.png")
+      : require("../assets/Shield.png"),
   };
-
-  const result = getResultData();
 
   return (
     <ImageBackground
@@ -65,7 +64,7 @@ export default function ResultadoAnalise() {
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
-          {/* BACK */}
+          {/* BACK BUTTON */}
           <TouchableOpacity
             style={styles.backButtonContainer}
             onPress={() => router.back()}
@@ -74,16 +73,15 @@ export default function ResultadoAnalise() {
             <Text style={styles.backButton}>←</Text>
           </TouchableOpacity>
 
-          {/* CARD */}
+          {/* CARD PRINCIPAL */}
           <View style={styles.card}>
-            {/* TITLE */}
-            <Text style={styles.title}>Analise Concluída</Text>
+            <Text style={styles.title}>Análise Concluída</Text>
 
             <Text style={styles.subtitle}>
-              Verificamos esta informação em múltiplas fontes confiáveis.
+              Resultado baseado na análise da IA
             </Text>
 
-            {/* RESULT */}
+            {/* RESULTADO */}
             <View style={styles.resultCard}>
               <View
                 style={[
@@ -104,16 +102,20 @@ export default function ResultadoAnalise() {
                 {result.titulo}
               </Text>
 
-              <Text style={styles.resultDescription}>{result.descricao}</Text>
+              <Text style={styles.resultDescription}>
+                {result.descricao}
+              </Text>
             </View>
 
-            {/* SCORE */}
+            {/* CONFIANÇA */}
             <View style={styles.scoreArea}>
               <View style={styles.scoreHeader}>
-                <Text style={styles.confidenceText}>Nível de confiança</Text>
+                <Text style={styles.confidenceText}>
+                  Nível de confiança
+                </Text>
 
                 <Text style={[styles.scorePercentage, { color: result.cor }]}>
-                  {porcentagem}%
+                  {confianca}%
                 </Text>
               </View>
 
@@ -123,52 +125,43 @@ export default function ResultadoAnalise() {
                     style={[
                       styles.progressFill,
                       {
-                        width: `${porcentagem}%`,
+                        width: `${confianca}%`,
                         backgroundColor: result.cor,
                       },
                     ]}
-                  >
-                    <View style={styles.progressGlow} />
-                  </View>
+                  />
                 </View>
               </View>
             </View>
 
-            {/* SOURCES */}
-            <View style={styles.sourcesCard}>
-              <Text style={styles.sourcesTitle}>Fontes Consultadas</Text>
+            {/* ALERTAS */}
+            {Array.isArray(data.alertas) && data.alertas.length > 0 && (
+              <View style={styles.sourcesCard}>
+                <Text style={styles.sourcesTitle}>Alertas da IA</Text>
 
-              <View style={styles.sourcesRow}>
-                <Image
-                  source={require("../assets/image.png")}
-                  style={styles.sourceIcon}
-                />
-
-                <Image
-                  source={require("../assets/arrowLeft.png")}
-                  style={styles.arrowIcon}
-                />
-
-                <Image
-                  source={require("../assets/image.png")}
-                  style={styles.sourceIcon}
-                />
-
-                <Image
-                  source={require("../assets/arrowLeft.png")}
-                  style={styles.arrowIcon}
-                />
-
-                <Image
-                  source={require("../assets/image.png")}
-                  style={styles.sourceIcon}
-                />
+                {data.alertas.map((item: string, index: number) => (
+                  <Text key={index} style={styles.alertText}>
+                    • {item}
+                  </Text>
+                ))}
               </View>
-            </View>
+            )}
 
-            {/* BUTTON */}
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Ver detalhes da análise</Text>
+            {/* BOTÃO */} 
+           <TouchableOpacity
+  style={styles.button}
+  onPress={() =>
+    router.push({
+      pathname: "/detalhes",
+      params: {
+        data: JSON.stringify(data),
+      },
+    })
+  }
+>
+              <Text style={styles.buttonText}>
+                Ver detalhes da análise
+              </Text>
 
               <Image
                 source={require("../assets/send.png")}
@@ -181,6 +174,8 @@ export default function ResultadoAnalise() {
     </ImageBackground>
   );
 }
+
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
   background: {
@@ -197,34 +192,18 @@ const styles = StyleSheet.create({
   backButtonContainer: {
     width: isVerySmallDevice ? 48 : 55,
     height: isVerySmallDevice ? 48 : 55,
-
     borderRadius: 999,
-
-    backgroundColor: "#FFFFFF",
-
+    backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
-
     borderWidth: 2,
     borderColor: "#702516",
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 3,
-      height: 5,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-
-    elevation: 5,
-
     alignSelf: "flex-start",
-
-    marginBottom: isSmallDevice ? 14 : 18,
+    marginBottom: 18,
   },
 
   backButton: {
-    fontSize: isVerySmallDevice ? 24 : 28,
+    fontSize: 28,
     color: "#702516",
     fontWeight: "bold",
   },
@@ -232,271 +211,131 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
     maxWidth: 480,
-
-    backgroundColor: "#FFFFFF",
-
-    borderRadius: width < 380 ? 22 : 28,
-
-    paddingHorizontal: width < 380 ? 14 : 20,
-    paddingVertical: width < 380 ? 18 : 24,
-
+    backgroundColor: "#fff",
+    borderRadius: 26,
+    padding: 20,
     borderWidth: 2,
-    borderColor: "#702516ab",
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 4,
-      height: 6,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 5,
-
-    elevation: 8,
+    borderColor: "#702516aa",
   },
 
   title: {
-    fontSize: isVerySmallDevice ? 22 : width < 380 ? 28 : 32,
+    fontSize: 28,
     textAlign: "center",
-
     color: "#702516",
-
     fontWeight: "bold",
-    letterSpacing: 1.5,
   },
 
   subtitle: {
-    marginTop: 12,
-
     textAlign: "center",
-
     color: "#555",
-
-    fontSize: isVerySmallDevice ? 12 : width < 380 ? 13 : 15,
-
-    lineHeight: isVerySmallDevice ? 20 : 24,
+    marginTop: 10,
+    marginBottom: 20,
   },
 
   resultCard: {
-    width: "100%",
-
-    marginTop: isSmallDevice ? 20 : 28,
-
     backgroundColor: "#F5F5F5",
-
-    borderRadius: width < 380 ? 18 : 24,
-
-    borderWidth: 1.5,
-    borderColor: "#702516ab",
-
-    paddingVertical: width < 380 ? 18 : 26,
-    paddingHorizontal: width < 380 ? 14 : 20,
-
+    borderRadius: 20,
+    padding: 20,
     alignItems: "center",
   },
 
   iconCircle: {
-    width: isSmallDevice ? 84 : 96,
-    height: isSmallDevice ? 84 : 96,
-
+    width: 90,
+    height: 90,
     borderRadius: 999,
-
     borderWidth: 2,
-
     justifyContent: "center",
     alignItems: "center",
-
-    marginBottom: 18,
+    marginBottom: 15,
   },
 
   resultIcon: {
-    width: isSmallDevice ? 38 : 46,
-    height: isSmallDevice ? 38 : 46,
-
-    resizeMode: "contain",
+    width: 42,
+    height: 42,
   },
 
   resultTitle: {
-    fontSize: width < 380 ? 18 : 20,
+    fontSize: 18,
     fontWeight: "bold",
-
-    textAlign: "center",
-
     marginBottom: 10,
   },
 
   resultDescription: {
-    fontSize: width < 380 ? 14 : 16,
-
-    color: "#444",
-
     textAlign: "center",
-
-    lineHeight: 24,
+    color: "#444",
   },
 
   scoreArea: {
-    marginTop: 28,
+    marginTop: 25,
   },
 
   scoreHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-
-    marginBottom: 10,
   },
 
   confidenceText: {
-    fontSize: width < 380 ? 14 : 16,
-
-    color: "#444",
-
+    fontSize: 15,
     fontWeight: "600",
   },
 
   scorePercentage: {
-    fontSize: width < 380 ? 18 : 20,
-
+    fontSize: 18,
     fontWeight: "bold",
   },
 
   progressWrapper: {
-    width: "100%",
+    marginTop: 10,
   },
 
   progressBackground: {
-    width: "100%",
-
-    height: 16,
-
-    backgroundColor: "#E0E0E0",
-
+    height: 14,
+    backgroundColor: "#ddd",
     borderRadius: 999,
-
     overflow: "hidden",
-
-    borderWidth: 1,
-    borderColor: "#D2D2D2",
   },
 
   progressFill: {
     height: "100%",
-
-    borderRadius: 999,
-
-    justifyContent: "center",
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-
-    elevation: 3,
-  },
-
-  progressGlow: {
-    position: "absolute",
-
-    right: 0,
-    top: 0,
-    bottom: 0,
-
-    width: 18,
-
-    backgroundColor: "rgba(255,255,255,0.35)",
-
     borderRadius: 999,
   },
 
   sourcesCard: {
-    width: "100%",
-
-    marginTop: 28,
-
-    backgroundColor: "#F5F5F5",
-
-    borderRadius: 22,
-
-    borderWidth: 1.5,
-    borderColor: "#702516ab",
-
-    padding: 20,
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 16,
   },
 
   sourcesTitle: {
-    fontSize: width < 380 ? 15 : 17,
-
     fontWeight: "bold",
-
-    color: "#444",
-
-    marginBottom: 22,
+    marginBottom: 10,
   },
 
-  sourcesRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-
-  sourceIcon: {
-    width: isVerySmallDevice ? 28 : width < 380 ? 34 : 40,
-    height: isVerySmallDevice ? 28 : width < 380 ? 34 : 40,
-
-    resizeMode: "contain",
-  },
-
-  arrowIcon: {
-    width: isVerySmallDevice ? 14 : 20,
-    height: isVerySmallDevice ? 14 : 20,
-
-    resizeMode: "contain",
-
-    marginHorizontal: isVerySmallDevice ? 6 : 10,
-
-    tintColor: "#222",
+  alertText: {
+    color: "#333",
+    marginBottom: 5,
   },
 
   button: {
-    width: "100%",
-
-    marginTop: isSmallDevice ? 22 : 30,
-
+    marginTop: 25,
     backgroundColor: "#8B3A2E",
-
+    padding: 15,
     borderRadius: 999,
-
-    paddingVertical: isVerySmallDevice ? 14 : 18,
-    paddingHorizontal: 14,
-
     flexDirection: "row",
-
     justifyContent: "center",
     alignItems: "center",
   },
 
   buttonText: {
-    color: "#FFF",
-
-    fontSize: isVerySmallDevice ? 14 : width < 380 ? 16 : 18,
-
+    color: "#fff",
     fontWeight: "600",
-
     marginRight: 8,
-
-    textAlign: "center",
   },
 
   buttonArrowIcon: {
-    width: isVerySmallDevice ? 18 : 22,
-    height: isVerySmallDevice ? 18 : 22,
-
-    resizeMode: "contain",
-
-    tintColor: "#FFF",
+    width: 20,
+    height: 20,
+    tintColor: "#fff",
   },
 });
