@@ -2,23 +2,31 @@
 -- LIMPAR BANCO (TESTE)
 -- ==========================================
 
+PRAGMA foreign_keys = ON;
+
+
 DELETE FROM uso_diario;
 DELETE FROM assinaturas;
 DELETE FROM analises;
 DELETE FROM users;
 
 
+
 -- ==========================================
 -- TESTE 1: INSERIR USUÁRIO
 -- ==========================================
 
-INSERT INTO users (
+INSERT INTO users
+(
     id,
     nome,
     email,
     foto
 )
-VALUES (
+
+VALUES
+
+(
     'user_001',
     'Afonso Filho',
     'afonso@email.com',
@@ -26,8 +34,11 @@ VALUES (
 );
 
 
--- VER USUÁRIO INSERIDO
-SELECT * FROM users;
+
+-- VER USUÁRIO
+
+SELECT *
+FROM users;
 
 
 
@@ -35,7 +46,8 @@ SELECT * FROM users;
 -- TESTE 2: INSERIR ANÁLISE
 -- ==========================================
 
-INSERT INTO analises (
+INSERT INTO analises
+(
     id,
     user_id,
     link,
@@ -45,7 +57,10 @@ INSERT INTO analises (
     categoria,
     fontes
 )
-VALUES (
+
+VALUES
+
+(
     'analise_001',
     'user_001',
     'https://site-teste.com',
@@ -57,19 +72,24 @@ VALUES (
 );
 
 
+
 -- VER ANÁLISES
 
-SELECT * FROM analises;
+SELECT *
+FROM analises;
 
 
 
 -- ==========================================
--- TESTE 3: BUSCAR HISTÓRICO DO USUÁRIO
+-- TESTE 3: HISTÓRICO DO USUÁRIO
 -- ==========================================
 
 SELECT *
+
 FROM analises
+
 WHERE user_id = 'user_001'
+
 ORDER BY created_at DESC;
 
 
@@ -79,11 +99,15 @@ ORDER BY created_at DESC;
 -- ==========================================
 
 UPDATE users
+
 SET plano = 'premium'
+
 WHERE id = 'user_001';
 
 
-SELECT * FROM users;
+
+SELECT *
+FROM users;
 
 
 
@@ -91,7 +115,8 @@ SELECT * FROM users;
 -- TESTE 5: CRIAR ASSINATURA
 -- ==========================================
 
-INSERT INTO assinaturas (
+INSERT INTO assinaturas
+(
     id,
     user_id,
     plano,
@@ -99,7 +124,10 @@ INSERT INTO assinaturas (
     metodo_pagamento,
     expires_at
 )
-VALUES (
+
+VALUES
+
+(
     'assinatura_001',
     'user_001',
     'premium',
@@ -109,68 +137,92 @@ VALUES (
 );
 
 
-SELECT * FROM assinaturas;
+
+SELECT *
+FROM assinaturas;
 
 
 
 -- ==========================================
--- TESTE 6: USO DIÁRIO PRIMEIRO ACESSO
+-- TESTE 6: PRIMEIRO USO DIÁRIO
 -- ==========================================
 
-INSERT INTO uso_diario (
+INSERT INTO uso_diario
+(
     id,
     user_id,
+    data,
     quantidade
 )
-VALUES (
+
+VALUES
+
+(
     'uso_001',
     'user_001',
+    date('now','localtime'),
     1
 );
 
 
-SELECT * FROM uso_diario;
+
+SELECT *
+FROM uso_diario;
 
 
 
 -- ==========================================
--- TESTE 7: INCREMENTAR USO DIÁRIO
--- Simula segunda análise no mesmo dia
+-- TESTE 7: INCREMENTAR USO NO MESMO DIA
 -- ==========================================
 
-INSERT INTO uso_diario (
+INSERT INTO uso_diario
+(
     id,
     user_id,
+    data,
     quantidade
 )
-VALUES (
-    'uso_001',
+
+VALUES
+
+(
+    'uso_002',
     'user_001',
+    date('now','localtime'),
     1
 )
 
-ON CONFLICT(user_id, data)
-DO UPDATE SET quantidade = quantidade + 1;
+
+ON CONFLICT(user_id,data)
+
+DO UPDATE SET
+
+quantidade = uso_diario.quantidade + 1;
 
 
 
-SELECT * FROM uso_diario;
+SELECT *
+FROM uso_diario;
 
 
 
 -- ==========================================
--- TESTE 8: VERIFICAR SCORE INVALIDO
--- Deve dar erro (CHECK)
+-- TESTE 8: SCORE INVÁLIDO
+-- DEVE DAR ERRO
 -- ==========================================
 
-INSERT INTO analises (
+INSERT INTO analises
+(
     id,
     user_id,
     score,
     resultado,
     categoria
 )
-VALUES (
+
+VALUES
+
+(
     'analise_erro',
     'user_001',
     150,
@@ -181,16 +233,20 @@ VALUES (
 
 
 -- ==========================================
--- TESTE 9: TESTAR EMAIL DUPLICADO
--- Deve dar erro (UNIQUE)
+-- TESTE 9: EMAIL DUPLICADO
+-- DEVE DAR ERRO
 -- ==========================================
 
-INSERT INTO users (
+INSERT INTO users
+(
     id,
     nome,
     email
 )
-VALUES (
+
+VALUES
+
+(
     'user_002',
     'Outro usuário',
     'afonso@email.com'
@@ -199,24 +255,28 @@ VALUES (
 
 
 -- ==========================================
--- TESTE 10: TESTAR CASCADE DELETE
--- Apaga usuário e deve apagar:
--- analises
--- assinaturas
--- uso_diario
+-- TESTE 10: CASCADE DELETE
 -- ==========================================
 
 DELETE FROM users
+
 WHERE id = 'user_001';
 
 
 
--- CONFERIR SE SUMIU TUDO
+-- CONFERIR SE APAGOU TUDO
 
-SELECT * FROM users;
+SELECT *
+FROM users;
 
-SELECT * FROM analises;
 
-SELECT * FROM assinaturas;
+SELECT *
+FROM analises;
 
-SELECT * FROM uso_diario;
+
+SELECT *
+FROM assinaturas;
+
+
+SELECT *
+FROM uso_diario;

@@ -1,293 +1,236 @@
-
-import { router } from "expo-router";
 import {
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  useWindowDimensions,
 } from "react-native";
 
-const { width } = Dimensions.get("window");
+import { router } from "expo-router";
 
-type SidebarProps = {
-  onClose: () => void;
-  username?: string;
-  email?: string;
-  /** Rota atualmente ativa, para destacar o item correspondente */
-  activeRoute?: "historico" | "verificadas";
-};
+const PRIMARY = "#702516";
 
-export default function Sidebar({
-  onClose,
-  username = "UserName",
-  email = "user1@gmail.com",
-  activeRoute = "historico",
-}: SidebarProps) {
-  function irPara(rota: string) {
-    onClose();
-    router.push(rota as any);
-  }
+export default function Configuracoes() {
+  const { width, height } = useWindowDimensions();
+
+  const isSmall = height < 700;
+  const isVerySmall = height < 620;
+
+  const scale = (size: number) => {
+    const base = width / 390; // base iPhone padrão
+    return Math.round(size * base);
+  };
 
   return (
-    <View style={styles.sidebar}>
-      {/* TOPO: FECHAR + PLUS */}
-      <View style={styles.topRow}>
-        <TouchableOpacity
-          onPress={onClose}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.closeIcon}>✕</Text>
+    <View style={styles.container}>
+      
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={[styles.close, { fontSize: scale(22) }]}>✕</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.plusButton}
-          onPress={() => irPara("/planos")}
-        >
-          <Text style={styles.crown}>♛</Text>
-          <Text style={styles.plusText}>Plus</Text>
-        </TouchableOpacity>
+        <Text style={[styles.title, { fontSize: scale(18) }]}>
+          Configurações
+        </Text>
+
+        <View style={{ width: scale(24) }} />
       </View>
 
-      {/* HISTÓRICO */}
-      <TouchableOpacity
-        style={[
-          styles.menuButton,
-          activeRoute === "historico" && styles.menuButtonActive,
-        ]}
-        activeOpacity={0.85}
-        onPress={() => irPara("/historico")}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: scale(30) }}
       >
-        <Text
-          style={[
-            styles.menuButtonText,
-            activeRoute === "historico" && styles.menuButtonTextActive,
-          ]}
-        >
-          Histórico
-        </Text>
 
-        <Text
-          style={[
-            styles.menuIcon,
-            activeRoute === "historico" && styles.menuIconActive,
-          ]}
-        >
-          📶
-        </Text>
-      </TouchableOpacity>
+        {/* CARD */}
+        <View style={styles.card}>
+          <Text style={[styles.section, { fontSize: scale(12) }]}>
+            CONTA
+          </Text>
 
-      {/* VERIFICADAS */}
-      <TouchableOpacity
-        style={[
-          styles.menuButton,
-          activeRoute === "verificadas" && styles.menuButtonActive,
-        ]}
-        activeOpacity={0.85}
-        onPress={() => irPara("/verificadas")}
-      >
-        <Text
-          style={[
-            styles.menuButtonText,
-            activeRoute === "verificadas" && styles.menuButtonTextActive,
-          ]}
-        >
-          Verificadas
-        </Text>
-
-        <View style={styles.checkbox}>
-          <Text style={styles.checkboxMark}>✓</Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* ESPAÇO FLEXÍVEL */}
-      <View style={{ flex: 1 }} />
-
-      {/* PERFIL */}
-      <TouchableOpacity
-        style={styles.profileSection}
-        activeOpacity={0.85}
-        onPress={() => irPara("/perfil")}
-      >
-        <View style={styles.avatarBox}>
-          <Text style={styles.avatarIcon}>⛉</Text>
+          <Item label="Perfil" onPress={() => router.push("/perfil")} scale={scale} />
+          <Item label="Segurança e login" scale={scale} />
+          <Item label="Contato confiável" scale={scale} />
         </View>
 
-        <View style={styles.fieldsColumn}>
-          <View style={styles.fieldBox}>
-            <Text style={styles.fieldText}>{username}</Text>
-          </View>
+        {/* CARD */}
+        <View style={styles.card}>
+          <Text style={[styles.section, { fontSize: scale(12) }]}>
+            APLICATIVO
+          </Text>
 
-          <View style={styles.fieldBox}>
-            <Text style={styles.fieldText}>{email}</Text>
-          </View>
+          <Item label="Aparência" value="Sistema" scale={scale} />
+          <Item label="Idioma" value="Automático" scale={scale} />
+          <Item label="Notificações" scale={scale} />
         </View>
-      </TouchableOpacity>
+
+        {/* CARD */}
+        <View style={styles.card}>
+          <Text style={[styles.section, { fontSize: scale(12) }]}>
+            PRIVACIDADE
+          </Text>
+
+          <Item label="Controles de dados" scale={scale} />
+          <Item label="Proteções" scale={scale} />
+          <Item label="Controles parentais" scale={scale} />
+        </View>
+
+        {/* PREMIUM */}
+        <View style={styles.premium}>
+          <Text style={[styles.premiumTitle, { fontSize: scale(16) }]}>
+            VERATES PLUS
+          </Text>
+
+          <Text style={[styles.premiumDesc, { fontSize: scale(12) }]}>
+            Tenha acesso a recursos avançados e experiência completa.
+          </Text>
+
+          <TouchableOpacity
+            style={styles.premiumButton}
+            onPress={() => router.push("/planos")}
+          >
+            <Text style={[styles.premiumButtonText, { fontSize: scale(14) }]}>
+              Assinar agora
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+      </ScrollView>
     </View>
   );
 }
 
-const GOLD = "#f2c200";
-const DARK_GOLD_BORDER = "#8a6d1a";
-const SIDEBAR_BG = "#5c5c5c";
+/* ITEM RESPONSIVO */
+function Item({ label, value, onPress, scale }: any) {
+  return (
+    <TouchableOpacity
+      style={[
+        styles.item,
+        {
+          paddingVertical: scale(12),
+          paddingHorizontal: scale(12),
+          borderRadius: scale(10),
+        },
+      ]}
+      onPress={onPress}
+    >
+      <Text style={[styles.itemText, { fontSize: scale(14) }]}>
+        {label}
+      </Text>
+
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {value && (
+          <Text style={[styles.value, { fontSize: scale(12) }]}>
+            {value}
+          </Text>
+        )}
+        <Text style={[styles.arrow, { fontSize: scale(18) }]}>›</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 const styles = StyleSheet.create({
-  sidebar: {
+  container: {
     flex: 1,
-    width: "100%",
-
-    backgroundColor: SIDEBAR_BG,
-
-    paddingHorizontal: 18,
+    backgroundColor: "#F3F3F3",
+    paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 24,
   },
 
-  topRow: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-
-    marginBottom: 22,
+    marginBottom: 18,
   },
 
-  closeIcon: {
-    fontSize: 22,
-    color: "#fff",
-    fontWeight: "bold",
+  close: {
+    color: PRIMARY,
+    fontWeight: "900",
   },
 
-  plusButton: {
-    flexDirection: "row",
-    alignItems: "center",
-
-    borderWidth: 1.5,
-    borderColor: GOLD,
-
-    borderRadius: 20,
-
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+  title: {
+    fontWeight: "900",
+    color: PRIMARY,
+    letterSpacing: 1,
   },
 
-  crown: {
-    fontSize: 13,
-    color: GOLD,
-    marginRight: 5,
-  },
-
-  plusText: {
-    color: GOLD,
-    fontWeight: "bold",
-    fontSize: 13,
-  },
-
-  menuButton: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-
-    backgroundColor: "#3a3a3a",
-
-    borderRadius: 18,
-
-    borderWidth: 1.5,
-    borderColor: DARK_GOLD_BORDER,
-
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-
+  card: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 2,
+    borderColor: "#7025168f",
     marginBottom: 14,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
 
-  menuButtonActive: {
-    backgroundColor: GOLD,
-    borderColor: "#9c7a00",
+  section: {
+    color: PRIMARY,
+    fontWeight: "900",
+    marginBottom: 10,
+    letterSpacing: 1,
   },
 
-  menuButtonText: {
-    color: GOLD,
-    fontWeight: "bold",
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-
-  menuButtonTextActive: {
-    color: "#3a2a00",
-  },
-
-  menuIcon: {
-    fontSize: 16,
-  },
-
-  menuIconActive: {
-    opacity: 0.85,
-  },
-
-  checkbox: {
-    width: 22,
-    height: 22,
-
-    borderRadius: 4,
-
-    backgroundColor: GOLD,
-
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  checkboxMark: {
-    color: "#3a2a00",
-    fontWeight: "bold",
-    fontSize: 13,
-  },
-
-  profileSection: {
+  item: {
     flexDirection: "row",
-    alignItems: "flex-end",
-
-    gap: 10,
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
+    marginBottom: 8,
   },
 
-  avatarBox: {
-    width: 46,
-    height: 46,
+  itemText: {
+    color: "#333",
+    fontWeight: "600",
+  },
 
-    borderRadius: 8,
+  arrow: {
+    color: PRIMARY,
+    fontWeight: "900",
+  },
 
-    backgroundColor: "#3a3a3a",
+  value: {
+    color: "#777",
+    marginRight: 6,
+    fontWeight: "600",
+  },
 
+  premium: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1.5,
-    borderColor: GOLD,
+    borderColor: PRIMARY,
+    marginBottom: 30,
+  },
 
-    justifyContent: "center",
+  premiumTitle: {
+    color: PRIMARY,
+    fontWeight: "900",
+    marginBottom: 6,
+  },
+
+  premiumDesc: {
+    color: "#666",
+    marginBottom: 12,
+  },
+
+  premiumButton: {
+    backgroundColor: PRIMARY,
+    padding: 12,
+    borderRadius: 10,
     alignItems: "center",
   },
 
-  avatarIcon: {
-    fontSize: 20,
-    color: GOLD,
-  },
-
-  fieldsColumn: {
-    flex: 1,
-    gap: 8,
-  },
-
-  fieldBox: {
-    backgroundColor: "#3a3a3a",
-
-    borderRadius: 8,
-
-    borderWidth: 1.5,
-    borderColor: "#8a392c",
-
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-
-  fieldText: {
-    color: GOLD,
-    fontSize: 13,
+  premiumButtonText: {
+    color: "#FFF",
+    fontWeight: "900",
   },
 });

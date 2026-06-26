@@ -1,5 +1,6 @@
-CREATE TABLE users (
-    id TEXT PRIMARY KEY, 
+CREATE TABLE users
+(
+    id TEXT PRIMARY KEY,
     nome TEXT,
     email TEXT UNIQUE,
     plano TEXT DEFAULT 'gratis',
@@ -7,7 +8,8 @@ CREATE TABLE users (
     created_at TEXT DEFAULT (datetime('now', 'localtime')) NOT NULL
 );
 
-CREATE TABLE analises (
+CREATE TABLE analises
+(
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     link TEXT,
@@ -15,12 +17,13 @@ CREATE TABLE analises (
     score INTEGER CHECK (score >= 0 AND score <= 100),
     resultado TEXT,
     categoria TEXT,
-    fontes TEXT DEFAULT '[]', 
+    fontes TEXT DEFAULT '[]',
     created_at TEXT DEFAULT (datetime('now', 'localtime')) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE assinaturas (
+CREATE TABLE assinaturas
+(
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     plano TEXT NOT NULL,
@@ -31,7 +34,8 @@ CREATE TABLE assinaturas (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE uso_diario (
+CREATE TABLE uso_diario
+(
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     data TEXT DEFAULT (date('now', 'localtime')) NOT NULL,
