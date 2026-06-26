@@ -20,6 +20,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { useSQLiteContext } from "expo-sqlite";
 import { dbInsertUser } from "../database/databaseInit";
+import { createUser } from "../services/userService";
 
 const { width, height } = Dimensions.get("window");
 
@@ -27,7 +28,8 @@ const isSmallDevice = height < 700;
 const isVerySmallDevice = height < 620;
 
 export default function Cadastro() {
-const db = useSQLiteContext();
+  // Só ativa o context se NÃO for ambiente web para evitar o crash de Context vazio
+  const db = Platform.OS !== "web" ? useSQLiteContext() : null;
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -43,41 +45,46 @@ const db = useSQLiteContext();
     confirmSenha: "", 
   });
 
-async function handleCadastro() {
-  let newErrors = {
-    username: "",
-    email: "",
-    senha: "",
-    confirmSenha: "",
-  };
+  async function handleCadastro() {
+    let newErrors = {
+      username: "",
+      email: "",
+      senha: "",
+      confirmSenha: "",
+    };
 
-  if (!username.trim()) newErrors.username = "Nome obrigatório";
-  if (!/^\S+@\S+\.\S+$/.test(email)) newErrors.email = "E-mail inválido";
-  if (senha.length < 6) newErrors.senha = "Mínimo de 6 caracteres";
-  if (senha !== confirmSenha) newErrors.confirmSenha = "As senhas não coincidem";
+    if (!username.trim()) newErrors.username = "Nome obrigatório";
+    if (!/^\S+@\S+\.\S+$/.test(email)) newErrors.email = "E-mail inválido";
+    if (senha.length < 6) newErrors.senha = "Mínimo de 6 caracteres";
+    if (senha !== confirmSenha) newErrors.confirmSenha = "As senhas não coincidem";
 
-  setErrors(newErrors);
+    setErrors(newErrors);
 
-  if (Object.values(newErrors).every((x) => x === "")) {
-    try {
-      // Cria um ID único simulado para o banco de dados (ex: usar timestamp)
-      const userId = "usr_" + Date.now();
+    if (Object.values(newErrors).every((x) => x === "")) {
+      // Bloqueia a execução do banco caso o usuário tente rodar via Web
+      if (Platform.OS === "web") {
+        console.warn("SQLite não está ativo no ambiente Web.");
+        Alert.alert("Aviso", "O cadastro local em SQLite só está disponível em dispositivos móveis (Android/iOS).");
+        return;
+      }
 
-      // Salva os dados na tabela 'users' do SQLite
-      await dbInsertUser(db, userId, username, email);
+      try {
+        if (db) {
+          await createUser(db, username, email);
 
-      Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
-        {
-          text: "OK",
-          onPress: () => router.replace("/inicialScreen" as any),
-        },
-      ]);
-    } catch (error) {
-      console.error("Erro ao salvar usuário no banco:", error);
-      Alert.alert("Erro", "Não foi possível salvar o usuário localmente.");
+          Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
+            {
+              text: "OK",
+              onPress: () => router.replace("/inicialScreen" as any),
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error(error);
+        Alert.alert("Erro", "Falha ao criar usuário");
+      }
     }
   }
-}
 
   const hasErrors = Object.values(errors).some((e) => e);
 
@@ -233,7 +240,6 @@ async function handleCadastro() {
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
   background: {
     flex: 1,

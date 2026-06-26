@@ -21,7 +21,7 @@ import {
 import { analisarConteudoIA } from "../services/api";
 
 // ==============================
-// SCREEN
+// TELA PRINCIPAL
 // ==============================
 
 export default function AnalisarTexto() {
@@ -83,19 +83,18 @@ export default function AnalisarTexto() {
             Cole ou digite o conteúdo que deseja verificar.
           </Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Digite ou cole o texto aqui..."
-            placeholderTextColor="#666"
-            value={conteudo}
-            onChangeText={setConteudo}
-            multiline
-          />
+<TextInput
+  style={styles.input}
+  placeholder="Digite ou cole o texto aqui..."
+  placeholderTextColor="#666"
+  value={conteudo}
+  onChangeText={setConteudo}
+  multiline
+  textAlign="left"
+  textAlignVertical="center"
+/>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={analisarConteudo}
-          >
+          <TouchableOpacity style={styles.button} onPress={analisarConteudo}>
             <Text style={styles.buttonText}>Analisar o texto</Text>
 
             <Image
@@ -112,16 +111,13 @@ export default function AnalisarTexto() {
 }
 
 // ==============================
-// HEADER (IGUAL ANÁLISE LINK)
+// HEADER (IDÊNTICO AO LINK)
 // ==============================
 
 function Header() {
   return (
     <View style={styles.header}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Text style={styles.backText}>←</Text>
       </TouchableOpacity>
 
@@ -129,10 +125,7 @@ function Header() {
         style={styles.plusButton}
         onPress={() => router.push("/planos" as any)}
       >
-        <Image
-          source={require("../assets/Plus.png")}
-          style={styles.plusIcon}
-        />
+        <Image source={require("../assets/Plus.png")} style={styles.icon} />
         <Text style={styles.plusText}>Plus</Text>
       </TouchableOpacity>
     </View>
@@ -140,7 +133,7 @@ function Header() {
 }
 
 // ==============================
-// SECURITY CARD (IGUAL)
+// SECURITY CARD (IDÊNTICO)
 // ==============================
 
 function SecurityCard() {
@@ -171,7 +164,7 @@ function WebMessage() {
 }
 
 // ==============================
-// STYLES (IGUAL ANÁLISE LINK)
+// ESTILOS (IGUAL AO LINK)
 // ==============================
 
 const styles = StyleSheet.create({
@@ -208,15 +201,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#702516",
+    borderColor: "#8B3A2E",
     borderRadius: 30,
     paddingHorizontal: 20,
     paddingVertical: 10,
-  },
-
-  plusIcon: {
-    width: 22,
-    height: 22,
   },
 
   plusText: {
@@ -255,20 +243,19 @@ const styles = StyleSheet.create({
 
   input: {
     width: "100%",
-    height: 110,
+    height: 72,
     backgroundColor: "#F4F4F4",
     borderRadius: 20,
     borderWidth: 2,
     borderColor: "#8A4A3B",
     paddingHorizontal: 18,
-    textAlignVertical: "top",
   },
 
   button: {
     marginTop: 25,
     height: 58,
     width: "100%",
-    backgroundColor: "#6B2416",
+    backgroundColor: "#702516",
     borderRadius: 18,
     flexDirection: "row",
     justifyContent: "center",
@@ -285,6 +272,7 @@ const styles = StyleSheet.create({
   icon: {
     width: 22,
     height: 22,
+    color: "#FFF",
   },
 
   securityCard: {
